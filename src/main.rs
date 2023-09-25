@@ -19,4 +19,5 @@ fn main() {
     action_chains.load();
     action_chains.invoke_chain("custom_lobby".to_string());
     action_chains.invoke_chain("move_self_spec".to_string());
+    action_chains.invoke_chain("set_preset".to_string());
 }
