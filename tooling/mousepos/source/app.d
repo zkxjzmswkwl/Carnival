@@ -27,8 +27,8 @@ void main()
                     int deltaX, deltaY;
                     deltaX = cursorPos.x - lastX;
                     deltaY = cursorPos.y - lastY;
-                    writeln("[tomlheader]");
-                    writeln("x = " ~ lastX.to!string ~ "\ny = " ~ lastY.to!string ~ "\nwidth = " ~ deltaX.to!string ~ "\nheight = " ~ deltaY.to!string);
+                    // { x = 1641, y = 356, delay = 200},
+                    writeln("{ x = " ~ lastX.to!string ~ ", y = " ~ lastY.to!string ~ ", delay = },");
                     lastX = 6969;
                     lastY = 6969;
                 }
