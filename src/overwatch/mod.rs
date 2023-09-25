@@ -3,11 +3,11 @@ use std::thread;
 use windows::{
     core::PCSTR,
     Win32::{
-        Foundation::{GetLastError, HWND},
+        Foundation::HWND,
         UI::WindowsAndMessaging::{
             FindWindowA, GetForegroundWindow, GetWindowLongPtrA, SetForegroundWindow,
             SetWindowLongPtrA, SetWindowPos, GWL_STYLE, SET_WINDOW_POS_FLAGS, WINDOW_STYLE,
-            WS_BORDER, WS_CAPTION, WS_MINIMIZE, WS_SIZEBOX,
+            WS_BORDER, WS_CAPTION, WS_SIZEBOX,
         },
     },
 };
@@ -60,7 +60,7 @@ pub fn remove_window_decorations(
 pub fn client_prelude() {
     let hwnd = get_hwnd().unwrap();
     // Yes, these need to be set individually and in this order.
-    remove_window_decorations(&hwnd, WS_CAPTION);
-    remove_window_decorations(&hwnd, WS_SIZEBOX);
-    remove_window_decorations(&hwnd, WS_BORDER);
+    let _ = remove_window_decorations(&hwnd, WS_CAPTION); //these errors need to be used. Il let you figure out how you wanna do that 
+    let _ =remove_window_decorations(&hwnd, WS_SIZEBOX);
+    let _  =remove_window_decorations(&hwnd, WS_BORDER);
 }
