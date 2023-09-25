@@ -29,7 +29,7 @@ impl StateHandler {
             if !File::create("state_handler.json").is_ok() {
                 panic!("nope")
             }
-            write("state_handler.json", json_str);
+            write("state_handler.json", json_str).expect("Couldn't write state_handler.json");
         }
     }
 
