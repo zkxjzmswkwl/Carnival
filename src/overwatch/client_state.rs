@@ -1,5 +1,7 @@
+use serde::{Deserialize, Serialize};
+
 #[allow(dead_code)]
-#[derive(PartialEq, Debug)]
+#[derive(Default, PartialEq, Debug, Serialize, Deserialize)]
 enum Menu {
     MainMenu,
     PlayMenu,
@@ -12,20 +14,19 @@ enum Menu {
     CustomSettingsMaps,
     CustomSettingsHeroes,
     CustomSettingsWorkshop,
+    #[default]
     Unknown,
 }
 
-#[derive(Debug)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 pub struct ClientState {
     client_state: Menu,
     previous_state: Menu,
 }
 
 impl ClientState {
-    pub fn default() -> Self {
-        ClientState {
-            client_state: Menu::Unknown,
-            previous_state: Menu::Unknown,
-        }
+    pub fn test_set_dummy_data(&mut self) {
+        self.client_state = Menu::CustomSettingsRoot;
+        self.previous_state = Menu::CustomLobby;
     }
 }
