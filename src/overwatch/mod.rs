@@ -16,6 +16,7 @@ use winput::Vk;
 pub mod client_state;
 pub mod game_state;
 pub mod state_handler;
+pub mod actions;
 
 fn get_hwnd() -> Result<HWND, windows::core::Error> {
     let process_name: PCSTR = windows::core::s!("Overwatch");
@@ -36,7 +37,7 @@ pub fn remove_window_decorations(
 ) -> Result<(), windows::core::Error> {
     // We get the hwnd for Overwatch which is enough to set the foreground window.
     // But for some reason, we need to get the engine window (child hwnd) or we run into
-    // problems.
+    // problems with cursor offset.
     unsafe { SetForegroundWindow(*hwnd) };
     thread::sleep(time::Duration::from_millis(200));
     let hwnd = unsafe { GetForegroundWindow() };
@@ -50,7 +51,7 @@ pub fn remove_window_decorations(
     winput::release(Vk::Control);
 
     // Force window repaint to avoid cursor offset issues.
-    unsafe { SetWindowPos(hwnd, None, 1800, 200, 1920, 1080, SET_WINDOW_POS_FLAGS(0))? };
+    unsafe { SetWindowPos(hwnd, None, 0, 0, 1920, 1080, SET_WINDOW_POS_FLAGS(0))? };
     thread::sleep(time::Duration::from_millis(200));
     Ok(())
 }
