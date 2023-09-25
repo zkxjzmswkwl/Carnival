@@ -1,0 +1,12 @@
+{
+	"authors": [
+		"Carter"
+	],
+	"copyright": "Copyright © 2022, Carter",
+	"description": "mouse tooling",
+	"license": "proprietary",
+	"name": "mousepos",
+	"libs": [
+		"user32"
+	]
+}
