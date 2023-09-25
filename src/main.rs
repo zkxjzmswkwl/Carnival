@@ -1,10 +1,10 @@
-use overwatch::{state_handler::StateHandler, actions::Actions};
 use crate::config::Config;
+use overwatch::{actions::Actions, state_handler::StateHandler};
 use tracing::metadata::LevelFilter;
 
+mod config;
 mod input;
 mod overwatch;
-mod config;
 
 use color_eyre::eyre::Result;
 
@@ -14,18 +14,16 @@ fn main() -> Result<()> {
         log_level = LevelFilter::TRACE;
     }
 
-    color_eyre::install()?; 
+    color_eyre::install()?;
     tracing_subscriber::fmt()
         .pretty()
         .with_max_level(log_level)
         .init();
 
-
     match overwatch::client_prelude() {
         Ok(_) => log::trace!("client_prelude is OK!"),
         Err(e) => panic!("Error in client prelude {}", e),
     }
-
 
     let mut state_handler: StateHandler = StateHandler::default();
     state_handler.test_set_dummy_data().dump();
@@ -33,7 +31,7 @@ fn main() -> Result<()> {
     log::debug!("{:#?}", state_handler);
 
     let config = Config::load();
-     log::debug!("{:#?}", config);
+    log::debug!("{:#?}", config);
 
     let mut action_chains = Actions::default();
     action_chains.load();
