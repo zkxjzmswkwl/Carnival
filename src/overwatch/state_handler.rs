@@ -1,7 +1,7 @@
-use std::fs::{File, write, read_to_string};
-use serde::{Deserialize, Serialize};
 use crate::overwatch::client_state::ClientState;
 use crate::overwatch::game_state::GameState;
+use serde::{Deserialize, Serialize};
+use std::fs::{read_to_string, write, File};
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct StateHandler {
@@ -34,7 +34,8 @@ impl StateHandler {
     }
 
     pub fn restore(&mut self) {
-        let json = read_to_string("state_handler.json").expect("state_handler.json: failed to read");
+        let json =
+            read_to_string("state_handler.json").expect("state_handler.json: failed to read");
         if let Ok(serialized_dump) = serde_json::from_str(&json) {
             *self = serialized_dump;
         }

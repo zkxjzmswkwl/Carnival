@@ -16,4 +16,3 @@ impl GameState {
         self.red_team.push("TestRed3#123".to_string());
     }
 }
-
