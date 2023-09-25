@@ -20,7 +20,7 @@ pub mod state_handler;
 const NULL_HWND: HWND = HWND(0);
 
 fn get_hwnd() -> Result<HWND, windows::core::Error> {
-    let process_name: PCSTR = windows::core::s!("Untitled - Notepad");
+    let process_name: PCSTR = windows::core::s!("Overwatch");
     let hwnd = unsafe { FindWindowA(None, process_name) };
     println!("{:?}", hwnd);
     if hwnd == NULL_HWND {
