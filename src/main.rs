@@ -1,7 +1,7 @@
 use overwatch::state_handler::StateHandler;
 
-mod overwatch;
 mod input;
+mod overwatch;
 
 fn main() {
     overwatch::client_prelude();
