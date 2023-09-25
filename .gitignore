@@ -1,6 +1,10 @@
-/target
+matchserver/target
 notes
 tooling/.dub
 tooling/mousepos/*.exe
 tooling/mousepos/*.pdb
 scratchpad
+*.pdb
+*.exe
+*.obj
+*.ilk
