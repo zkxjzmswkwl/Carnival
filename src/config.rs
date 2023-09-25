@@ -1,7 +1,6 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
 use toml;
-
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Config {
@@ -9,7 +8,7 @@ pub struct Config {
     start_game: bool,
     start_ws_server: bool,
     start_discord_bot: bool,
-    discord_bot_token: String
+    discord_bot_token: String,
 }
 
 impl Config {
