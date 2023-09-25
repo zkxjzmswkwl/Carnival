@@ -1,5 +1,5 @@
-use crate::overwatch::client_state::{ClientState};
-use crate::overwatch::game_state::{GameState};
+use crate::overwatch::client_state::ClientState;
+use crate::overwatch::game_state::GameState;
 
 struct StateHandler {
     client_state: ClientState,

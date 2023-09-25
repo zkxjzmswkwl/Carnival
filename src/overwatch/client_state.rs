@@ -12,22 +12,20 @@ enum Menu {
     CustomSettingsMaps,
     CustomSettingsHeroes,
     CustomSettingsWorkshop,
-    Unknown
+    Unknown,
 }
 
 #[derive(Debug)]
 pub struct ClientState {
     client_state: Menu,
-    previous_state: Menu
+    previous_state: Menu,
 }
 
 impl ClientState {
     pub fn default() -> Self {
         ClientState {
             client_state: Menu::Unknown,
-            previous_state: Menu::Unknown
+            previous_state: Menu::Unknown,
         }
     }
 }
-
-

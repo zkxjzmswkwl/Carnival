@@ -1,23 +1,18 @@
 use core::time;
 use std::thread;
 
-use winapi::{um::winuser::{
-        SetForegroundWindow,
-        self,
-        GetForegroundWindow,
-        GetWindowLongPtrA,
-        SetWindowLongPtrA,
-        SetWindowPos,
-        SWP_NOMOVE,
-        SWP_NOSIZE,
-        SWP_FRAMECHANGED,
-        GWL_STYLE
-}, shared::{windef, minwindef::DWORD}};
+use winapi::{
+    shared::{minwindef::DWORD, windef},
+    um::winuser::{
+        self, GetForegroundWindow, GetWindowLongPtrA, SetForegroundWindow, SetWindowLongPtrA,
+        SetWindowPos, GWL_STYLE, SWP_FRAMECHANGED, SWP_NOMOVE, SWP_NOSIZE,
+    },
+};
 use winput::Vk;
 
 pub mod client_state;
-pub mod state_handler;
 pub mod game_state;
+pub mod state_handler;
 
 fn window_handle() -> windef::HWND {
     let window_handle = unsafe {
