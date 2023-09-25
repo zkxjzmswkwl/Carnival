@@ -201,6 +201,7 @@ dependencies = [
  "color-eyre",
  "image",
  "imageproc",
+ "log",
  "obws",
  "rusty-tesseract",
  "serde",

@@ -16,6 +16,7 @@ fn main() -> Result<()> {
 
     color_eyre::install()?; 
     tracing_subscriber::fmt()
+        .pretty()
         .with_max_level(log_level)
         .init();
 
@@ -24,10 +25,10 @@ fn main() -> Result<()> {
     let mut state_handler: StateHandler = StateHandler::default();
     // state_handler.test_set_dummy_data().dump();
     state_handler.restore();
-    println!("{:#?}", state_handler);
+    log::debug!("{:#?}", state_handler);
 
     let config = Config::load();
-    println!("{:#?}", config);
+     log::debug!("{:#?}", config);
 
     let mut action_chains = Actions::default();
     action_chains.load();

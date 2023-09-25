@@ -21,7 +21,7 @@ pub mod actions;
 fn get_hwnd() -> Result<HWND, windows::core::Error> {
     let process_name: PCSTR = windows::core::s!("Overwatch");
     let hwnd = unsafe { FindWindowA(None, process_name) };
-    println!("{:?}", hwnd);
+    log::debug!("{:?}", hwnd);
     if hwnd == HWND::default() {
         /* unsure of whats going on here because calling GetLastError()?
         and then unwrapping the result should return a panic but it doesnt? */
