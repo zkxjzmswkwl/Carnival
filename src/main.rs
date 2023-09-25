@@ -21,7 +21,12 @@ fn main() -> Result<()> {
         .init();
 
 
-    overwatch::client_prelude();
+    match overwatch::client_prelude() {
+        Ok(_) => log::trace!("client_prelude is OK!"),
+        Err(e) => panic!("Error in client prelude {}", e),
+    }
+
+
     let mut state_handler: StateHandler = StateHandler::default();
     state_handler.test_set_dummy_data().dump();
     state_handler.restore();
