@@ -17,13 +17,11 @@ pub mod client_state;
 pub mod game_state;
 pub mod state_handler;
 
-const NULL_HWND: HWND = HWND(0);
-
 fn get_hwnd() -> Result<HWND, windows::core::Error> {
     let process_name: PCSTR = windows::core::s!("Overwatch");
     let hwnd = unsafe { FindWindowA(None, process_name) };
     println!("{:?}", hwnd);
-    if hwnd == NULL_HWND {
+    if hwnd == HWND::default() {
         /* unsure of whats going on here because calling GetLastError()?
         and then unwrapping the result should return a panic but it doesnt? */
         //unsafe { GetLastError()?; } //
