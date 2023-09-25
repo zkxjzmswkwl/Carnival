@@ -1,2 +1,5 @@
 /target
 notes
+tooling/.dub
+tooling/mousepos/*.exe
+tooling/mousepos/*.pdb
