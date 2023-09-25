@@ -23,7 +23,7 @@ fn main() -> Result<()> {
 
     overwatch::client_prelude();
     let mut state_handler: StateHandler = StateHandler::default();
-    // state_handler.test_set_dummy_data().dump();
+    state_handler.test_set_dummy_data().dump();
     state_handler.restore();
     log::debug!("{:#?}", state_handler);
 
