@@ -19,9 +19,8 @@ pub struct Actions {
 
 impl Action {
     pub fn invoke(self) {
-        if cfg!(debug_assertions) {
-            println!("[Action::invoke] invoking action {:#?}", self);
-        }
+        log::debug!(" Invoking action: \n {:#?}", self);
+
         input::click(self.x, self.y);
         thread::sleep(time::Duration::from_millis(self.delay));
     }
@@ -32,9 +31,7 @@ impl Actions {
         let chain = self.chains.get(&name)
             .expect(&format!("No chain by the name of \"{}\"", &name));
         let chain_len = chain.len();
-        if cfg!(debug_assertions) {
-            println!("[Actions::invoke_chain] Chain \"{name}\" has length of {chain_len}");
-        }
+        log::debug!("[Actions::invoke_chain] Chain \"{name}\" has length of {chain_len}");
 
         chain.iter().for_each(|action| {
             action.invoke();
