@@ -55,10 +55,12 @@ pub fn remove_window_decorations(
     Ok(())
 }
 
+// The only way these errors are thrown is by targeting a window of an elevated process
+// from a non-elevated process. In the context of Overwatch, this will never happen.
 pub fn client_prelude() {
     let hwnd = get_hwnd().unwrap();
     // Yes, these need to be set individually and in this order.
-    let _ = remove_window_decorations(&hwnd, WS_CAPTION); //these errors need to be used. Il let you figure out how you wanna do that 
-    let _ =remove_window_decorations(&hwnd, WS_SIZEBOX);
-    let _  =remove_window_decorations(&hwnd, WS_BORDER);
+    let _ = remove_window_decorations(&hwnd, WS_CAPTION);
+    let _ = remove_window_decorations(&hwnd, WS_SIZEBOX);
+    let _ = remove_window_decorations(&hwnd, WS_BORDER);
 }
