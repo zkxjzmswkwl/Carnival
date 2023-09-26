@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/mousepos
+mousepos.so
+mousepos.dylib
+mousepos.dll
+mousepos.a
+mousepos.lib
+mousepos-test-*
+*.exe
+*.o
+*.obj
+*.lst
