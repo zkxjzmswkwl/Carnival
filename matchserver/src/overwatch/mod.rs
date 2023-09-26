@@ -13,15 +13,15 @@ use windows::{
 };
 use winput::Vk;
 
+pub mod actions;
 pub mod client_state;
 pub mod game_state;
 pub mod state_handler;
-pub mod actions;
 
 fn get_hwnd() -> Result<HWND, windows::core::Error> {
     let process_name: PCSTR = windows::core::s!("Overwatch");
     let hwnd = unsafe { FindWindowA(None, process_name) };
-    println!("{:?}", hwnd);
+    log::debug!("{:?}", hwnd);
     if hwnd == HWND::default() {
         /* unsure of whats going on here because calling GetLastError()?
         and then unwrapping the result should return a panic but it doesnt? */
@@ -58,10 +58,12 @@ pub fn remove_window_decorations(
 
 // The only way these errors are thrown is by targeting a window of an elevated process
 // from a non-elevated process. In the context of Overwatch, this will never happen.
-pub fn client_prelude() {
+pub fn client_prelude() -> Result<(), windows::core::Error> {
     let hwnd = get_hwnd().unwrap();
     // Yes, these need to be set individually and in this order.
-    let _ = remove_window_decorations(&hwnd, WS_CAPTION);
-    let _ = remove_window_decorations(&hwnd, WS_SIZEBOX);
-    let _ = remove_window_decorations(&hwnd, WS_BORDER);
+    remove_window_decorations(&hwnd, WS_CAPTION)?;
+    remove_window_decorations(&hwnd, WS_SIZEBOX)?;
+    remove_window_decorations(&hwnd, WS_BORDER)?;
+
+    Ok(())
 }

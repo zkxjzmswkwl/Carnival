@@ -17,7 +17,7 @@ impl StateHandler {
     }
 
     fn to_json(&self) -> Option<String> {
-        if let Ok(json) = serde_json::to_string(self) {
+        if let Ok(json) = toml::to_string(self) {
             Some(json)
         } else {
             None
@@ -26,17 +26,17 @@ impl StateHandler {
 
     pub fn dump(&self) {
         if let Some(json_str) = self.to_json() {
-            if !File::create("state_handler.json").is_ok() {
+            if !File::create("state_handler.toml").is_ok() {
                 panic!("nope")
             }
-            write("state_handler.json", json_str).expect("Couldn't write state_handler.json");
+            write("state_handler.toml", json_str).expect("Couldn't write state_handler.toml");
         }
     }
 
     pub fn restore(&mut self) {
         let json =
-            read_to_string("state_handler.json").expect("state_handler.json: failed to read");
-        if let Ok(serialized_dump) = serde_json::from_str(&json) {
+            read_to_string("state_handler.toml").expect("state_handler.json: failed to read");
+        if let Ok(serialized_dump) = toml::from_str(&json) {
             *self = serialized_dump;
         }
     }
