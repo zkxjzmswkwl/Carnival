@@ -51,20 +51,3 @@ async fn main() {
 async fn root() -> &'static str {
     "Hello world"
 }
-
-
-
-// async fn register(Json(payload): Json<RegisterInput>) -> String {
-//     if payload.username.is_empty() || payload.password.is_empty() {
-//         return "Username or password not provided.".to_string();
-//     }
-//     let db = SqlitePool::connect("sqlite://sqlite.db").await.unwrap();
-//     let hashed_password = hash_password(&payload.password, b"sosecurewow", 12).unwrap();
-//     // let is_same_passwd: bool = verify_password("1test123", a.as_str(), b"sosecurewow").unwrap();
-//
-//     let result = sqlx::query("INSERT INTO users (name, password) VALUES ($1, $2)")
-//         .bind(payload.username)
-//         .bind(hashed_password)
-//         .execute(&db).await;
-//     "Done".to_string()
-// }
