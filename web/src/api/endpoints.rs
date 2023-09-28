@@ -18,10 +18,15 @@ pub async fn register(
     let username: &str = post_data.get_username();
     let password: &str = post_data.get_password();
     let password_conf: &str = post_data.get_password_conf();
+    let battletag: &str = post_data.get_battletag();
 
     if password != password_conf {
         return (StatusCode::BAD_REQUEST,
                 "Passwords do not match".to_string());
+    }
+
+    if service::does_battletag_exist(battletag, &state.pool).await {
+        return (StatusCode::BAD_REQUEST, "Battletag already exists".to_string())
     }
 
     if service::does_username_exist(username, &state.pool).await {
@@ -29,7 +34,7 @@ pub async fn register(
                 "Username already exists".to_string());
     }
 
-    match service::create_user(username, password, &state.pool).await {
+    match service::create_user(username, password, battletag, &state.pool).await {
         Ok(_) => return (StatusCode::OK, "Created".to_string()),
         Err(e) => {
             eprintln!("{e}");

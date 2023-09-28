@@ -25,7 +25,7 @@ class Test:
 
     def check(self, response) -> bool:
         self.actual = response
-        if self.actual == response:
+        if self.actual == self.expected:
             return self.success()
         return self.fail()
 
@@ -36,7 +36,9 @@ class Test:
         return False
 
     def success(self):
-        print(f"{Fore.GREEN}{self.name}: Passed{Style.RESET_ALL}")
+        print(f'''{Fore.GREEN}{self.name}: Passed:
+        \tExpected: {self.expected.to_string()}
+        \tReceived: {self.actual.to_string()}{Style.RESET_ALL}''')
         return True
 
 
@@ -60,9 +62,6 @@ class UserNotExist(Test):
         return post_get_response(endpoint="api/login",
                                  json_payload=payload)
 
-    def satisfies_expectations(self, response) -> bool:
-        return self.expected == response
-
 
 class RegisterMismatchedPasswords(Test):
     def __init__(self):
@@ -71,15 +70,29 @@ class RegisterMismatchedPasswords(Test):
 
     def test(self) -> Response:
         payload = {
-            "username": "test_user",
+            "username": "testuser69",
             "password": "123123",
-            "password_conf": "123123123"
+            "password_conf": "123123123",
+            "battletag": "Fuey500#12333"
         }
         return post_get_response(endpoint="api/register",
                                  json_payload=payload)
 
-    def satisfies_expectations(self, response) -> bool:
-        return self.expected == response
+
+class BattletagExists(Test):
+    def __init__(self):
+        super().__init__("BattletagExists",
+                         Response(400, "Battletag already exists"))
+
+    def test(self) -> Response:
+        payload = {
+            "username": "cartertest",
+            "password": "123123",
+            "password_conf": "123123",
+            "battletag": "Fuey500#123"
+        }
+        return post_get_response(endpoint="api/register",
+                                 json_payload=payload)
 
 
 def test_users():
@@ -90,6 +103,10 @@ def test_users():
     reg_mismatched_pw = RegisterMismatchedPasswords()
     reg_mismatched_pw_resp = reg_mismatched_pw.test()
     reg_mismatched_pw.check(reg_mismatched_pw_resp)
+
+    battletag_exists = BattletagExists()
+    battletag_exists_resp = battletag_exists.test()
+    battletag_exists.check(battletag_exists_resp)
 
 
 if __name__ == "__main__":
