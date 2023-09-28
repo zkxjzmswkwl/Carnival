@@ -1,6 +1,6 @@
 [chains]
 "custom_lobby" = [
-  { x = 141, y = 429, delay = 800},
+  { x = 162, y = 376, delay = 800},
   { x = 1641, y = 356, delay = 800},
   { x = 1773, y = 279, delay = 1500},
 ]

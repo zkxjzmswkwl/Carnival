@@ -16,6 +16,10 @@ pub struct LoginInput {
 
 /*--------------------------------------------------
  * There is most definitely a better way to do this.
+ * ---
+ * you could either do away with then through getting
+ * the fields directly or use a macro
+ * this is completely fine imo
 --------------------------------------------------*/
 impl RegisterInput {
     pub fn get_username(&self)      -> &str { &self.username      }

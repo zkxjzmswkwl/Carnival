@@ -1,5 +1,5 @@
 [package]
-name = "web"
+name = "carnival-web"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,6 +9,8 @@ edition = "2021"
 anyhow = "1.0.75"
 axum = "0.6.20"
 axum-client-ip = "0.4.2"
+dotenv = "0.15.0"
+dotenv_codegen = "0.15.0"
 easy_password = "0.1.4"
 serde = "1.0.188"
 serde_json = "1.0.107"
