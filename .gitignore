@@ -1,4 +1,5 @@
 matchserver/target
+target/
 notes
 tooling/.dub
 tooling/mousepos/*.exe
