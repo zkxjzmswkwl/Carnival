@@ -1,4 +1,5 @@
 matchserver/target
+target/
 notes
 tooling/.dub
 tooling/mousepos/*.exe
@@ -10,3 +11,6 @@ scratchpad
 *.ilk
 web/target/*
 vscode/*
+carnival-web/sqlite.db
+carnival-web/sqlite.db-shm
+carnival-web/sqlite.db-wal

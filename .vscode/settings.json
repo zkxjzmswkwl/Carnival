@@ -1,6 +1,0 @@
-{
-    "rust-analyzer.linkedProjects": [
-        ".\\matchserver\\Cargo.toml",
-        ".\\matchserver\\Cargo.toml"
-    ]
-}

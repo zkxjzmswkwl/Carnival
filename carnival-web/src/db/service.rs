@@ -2,6 +2,8 @@ use anyhow::Result;
 use easy_password::bcrypt::hash_password;
 use sqlx::{SqlitePool, sqlite::SqliteQueryResult, Sqlite};
 
+use crate::HMAC_KEY;
+
 use super::models::User;
 
 pub async fn user_by_username(
@@ -47,7 +49,7 @@ pub async fn create_user(
     pool: &SqlitePool
 ) -> Result<SqliteQueryResult, sqlx::Error> {
 
-    let hashed_pass = hash_password(password, b"dev-VERYsecure", 12).unwrap();
+    let hashed_pass = hash_password(password, HMAC_KEY, 12).unwrap();
     sqlx::query("INSERT INTO users (username, password, battletag) VALUES ($1, $2, $3)")
         .bind(username)
         .bind(hashed_pass)
