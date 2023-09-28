@@ -7,7 +7,7 @@ use axum::{
 use crate::{
     api::payloads::{RegisterInput, LoginInput},
     CarnyState,
-    db::service
+    db::service, HMAC_KEY
 };
 
 pub async fn register(
@@ -62,7 +62,7 @@ pub async fn login(
             "Error fetching user".to_string());
     }
 
-    if verify_password(password, user.unwrap().get_password(), b"dev-VERYsecure").unwrap() {
+    if verify_password(password, user.unwrap().get_password(), HMAC_KEY).unwrap() {
         return (StatusCode::OK, "totally-real-token".to_string());
     }
 
