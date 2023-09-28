@@ -9,3 +9,4 @@ scratchpad
 *.obj
 *.ilk
 web/target/*
+vscode/*
