@@ -8,3 +8,4 @@ scratchpad
 *.exe
 *.obj
 *.ilk
+web/target/*
