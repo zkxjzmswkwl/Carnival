@@ -16,7 +16,7 @@ impl StateHandler {
         self
     }
 
-    fn to_json(&self) -> Option<String> {
+    fn to_toml(&self) -> Option<String> {
         if let Ok(json) = toml::to_string(self) {
             Some(json)
         } else {
@@ -25,7 +25,7 @@ impl StateHandler {
     }
 
     pub fn dump(&self) {
-        if let Some(json_str) = self.to_json() {
+        if let Some(json_str) = self.to_toml() {
             if !File::create("state_handler.toml").is_ok() {
                 panic!("nope")
             }
