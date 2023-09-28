@@ -1,5 +1,8 @@
 use std::net::SocketAddr;
 
+#[macro_use]
+extern crate dotenv_codegen;
+
 use axum::{
     routing::{get, post},
     Router,
@@ -19,6 +22,9 @@ use crate::db::queries::tables;
 
 mod db;
 mod api;
+
+
+const HMAC_KEY: &[u8] = dotenv!("HMAC_KEY").as_bytes();
 
 #[derive(Clone)]
 pub struct CarnyState {
