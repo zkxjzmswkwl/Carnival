@@ -1,0 +1,7 @@
+[client_state]
+client_state = "CustomSettingsRoot"
+previous_state = "CustomLobby"
+
+[game_state]
+blue_team = ["TestBlue1#123", "TestBlue2#123", "TestBlue3#123"]
+red_team = ["TestRed1#123", "TestRed2#123", "TestRed3#123"]
