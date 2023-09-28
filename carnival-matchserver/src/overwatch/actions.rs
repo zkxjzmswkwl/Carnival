@@ -1,8 +1,11 @@
 use crate::input;
 use serde::{Deserialize, Serialize};
+use toml::map::Map;
+use winput::Mouse;
 use std::collections::HashMap;
 use std::fs::read_to_string;
 use std::{thread, time};
+
 
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Hash)] // TODO: Figure out why I need Copy, Clone and Hash? cbf
@@ -20,7 +23,6 @@ pub struct Actions {
 impl Action {
     pub fn invoke(self) {
         log::debug!(" Invoking action: \n {:#?}", self);
-
         input::click(self.x, self.y);
         thread::sleep(time::Duration::from_millis(self.delay));
     }
