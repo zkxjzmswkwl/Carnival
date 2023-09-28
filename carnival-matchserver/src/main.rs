@@ -1,5 +1,5 @@
 
-use overwatch::{state_handler::StateHandler, actions::ActionChain};
+use overwatch::{state_handler::StateHandler, actions::Actions};
 use tracing_subscriber::filter::LevelFilter;
 use crate::config::Config;
 
@@ -20,8 +20,6 @@ fn main() ->  Result<()> {
         .with_max_level(log_level)
         .init();
 
-    ActionChain::default().to_toml();
-
 
     overwatch::client_prelude()?;
     let mut state_handler: StateHandler = StateHandler::default();
@@ -32,9 +30,10 @@ fn main() ->  Result<()> {
     let config = Config::load();
     println!("{:#?}", config);
 
-
+    let mut action_chains = Actions::default();
+    action_chains.load();
+    action_chains.invoke_chain("custom_lobby".to_string());
+    action_chains.invoke_chain("move_self_spec".to_string());
 
     Ok(())
 }
-
-
