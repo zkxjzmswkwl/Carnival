@@ -18,6 +18,28 @@ class Response:
         print(self.to_string())
 
 
+class Test:
+    def __init__(self, name, expected):
+        self.name = name
+        self.expected = expected
+
+    def check(self, response) -> bool:
+        self.actual = response
+        if self.actual == response:
+            return self.success()
+        return self.fail()
+
+    def fail(self) -> bool:
+        print(f'''{Fore.RED}{self.name}: Failed:
+        \tExpected: {self.expected.to_string()}
+        \tReceived: {self.actual.to_string()}{Style.RESET_ALL}''')
+        return False
+
+    def success(self):
+        print(f"{Fore.GREEN}{self.name}: Passed{Style.RESET_ALL}")
+        return True
+
+
 def post_get_response(*, endpoint, json_payload):
     r = requests.post(
             f"http://localhost:3000/{endpoint}",
@@ -26,9 +48,9 @@ def post_get_response(*, endpoint, json_payload):
     return Response(r.status_code, r.text)
 
 
-class UserNotExist:
+class UserNotExist(Test):
     def __init__(self):
-        self.expected = Response(400, "User does not exist")
+        super().__init__("UserNotExist", Response(400, "User does not exist"))
 
     def test(self) -> Response:
         payload = {
@@ -42,9 +64,10 @@ class UserNotExist:
         return self.expected == response
 
 
-class RegisterMismatchedPasswords:
+class RegisterMismatchedPasswords(Test):
     def __init__(self):
-        self.expected = Response(400, "Passwords do not match")
+        super().__init__("RegisterMismatchedPasswords",
+                         Response(400, "Passwords do not match"))
 
     def test(self) -> Response:
         payload = {
@@ -60,28 +83,13 @@ class RegisterMismatchedPasswords:
 
 
 def test_users():
-    # TODO: Make test base class that handles this boilerplate for us
     not_exist = UserNotExist()
     not_exist_resp = not_exist.test()
-
-    if not not_exist.satisfies_expectations(not_exist_resp):
-        print(f'''{Fore.RED}UserNotExist: Failed:
-        \tExpected: {not_exist.expected.to_string()}
-        \tReceived: {not_exist_resp.to_string()}{Style.RESET_ALL}''')
-        return
-
-    print(f"{Fore.GREEN}UserNotExist: Passed{Style.RESET_ALL}")
+    not_exist.check(not_exist_resp)
 
     reg_mismatched_pw = RegisterMismatchedPasswords()
     reg_mismatched_pw_resp = reg_mismatched_pw.test()
-
-    if not reg_mismatched_pw.satisfies_expectations(reg_mismatched_pw_resp):
-        print(f'''{Fore.RED}RegisterMismatchedPasswords: Failed:
-        \tExpected: {reg_mismatched_pw.expected.to_string()}
-        \tReceived: {reg_mismatched_pw_resp.to_string()}{Style.RESET_ALL}''')
-        return
-
-    print(f"{Fore.GREEN}RegisterMismatchedPasswords: Passed{Style.RESET_ALL}")
+    reg_mismatched_pw.check(reg_mismatched_pw_resp)
 
 
 if __name__ == "__main__":
