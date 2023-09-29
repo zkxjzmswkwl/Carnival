@@ -7,8 +7,9 @@ pub mod tables {
 
     pub const CREATE_SESSION_TOKENS: &'static str = "CREATE TABLE IF NOT EXISTS session_tokens (
         for_user INT NOT NULL,
-        remote_addr VARCHAR(64) NOT NULL,
-        unique_hmac_key VARCHAR(64) UNIQUE NOT NULL,
+        remote_addr VARCHAR(100) NOT NULL,
+        unique_hmac_key VARCHAR(100) UNIQUE NOT NULL,
         token VARCHAR(250) UNIQUE NOT NULL,
-        is_valid BIT NOT NULL);";
+        is_valid BIT NOT NULL,
+        invalidation_source VARCHAR(100));";
 }

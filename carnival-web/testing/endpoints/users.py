@@ -77,10 +77,10 @@ class RegisterMismatchedPasswords(Test):
 
     def test(self) -> Response:
         payload = {
-            "username": "1realuserwow",
+            "username": "realuserwow",
             "password": "123123",
-            "password_conf": "123123",
-            "battletag": "riealuser#12333"
+            "password_conf": "1123123",
+            "battletag": "realuser#12333"
         }
         return post_get_response(endpoint="api/register",
                                  json_payload=payload)

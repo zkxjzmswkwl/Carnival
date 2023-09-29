@@ -21,7 +21,19 @@ pub async fn user_by_username(
     }
 }
 
-pub async fn userid_by_username(
+pub async fn by_id(id: i32, pool: &SqlitePool) -> Option<User> {
+    let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
+        .bind(id)
+        .fetch_one(pool)
+        .await;
+
+    if user.is_ok() {
+        return Some(user.unwrap());
+    }
+    None
+}
+
+pub async fn user_id_by_username(
     username: &str,
     pool: &SqlitePool
 ) -> Option<i32> {

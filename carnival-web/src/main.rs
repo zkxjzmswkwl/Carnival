@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::{net::SocketAddr, env};
 
 #[macro_use]
 extern crate dotenv_codegen;
@@ -47,6 +47,9 @@ impl CarnyState {
 
 #[tokio::main]
 async fn main() {
+    if cfg!(debug_assertions) {
+        env::set_var("RUST_BACKTRACE", "1");
+    }
     let state = CarnyState::new().await;
 
     let app: Router = Router::new()
