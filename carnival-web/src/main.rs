@@ -3,7 +3,7 @@ extern crate dotenv_codegen;
 
 use std::{net::SocketAddr, env};
 use http::{Method, HeaderName};
-use rendering::components::{register_form, login_form, login_route, register_route};
+use rendering::components::{register_form, login_form, login_route, register_route, index, hero};
 use tower_http::cors::{Any, CorsLayer};
 use axum::{
     routing::{get, post},
@@ -64,13 +64,14 @@ async fn main() {
         ]);
 
     let app: Router = Router::new()
-        .route("/", get(root))
+        .route("/", get(index))
         .route("/login", get(login_route))
         .route("/register", get(register_route))
         .route("/api/register", post(register))
         .route("/api/login", post(login))
         .route("/components/registration", get(register_form))
         .route("/components/login", get(login_form))
+        .route("/components/hero", get(hero))
         .layer(cors)
         .with_state(state.clone());
 
@@ -78,8 +79,4 @@ async fn main() {
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();
-}
-
-async fn root() -> &'static str {
-    "Hello world"
 }
