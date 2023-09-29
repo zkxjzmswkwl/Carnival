@@ -1,3 +1,3 @@
 pub mod queries;
-pub mod service;
 pub mod models;
+pub mod services;

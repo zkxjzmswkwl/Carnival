@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::{net::SocketAddr, env};
 
 #[macro_use]
 extern crate dotenv_codegen;
@@ -7,11 +7,6 @@ use axum::{
     routing::{get, post},
     Router,
     Server
-};
-use axum_client_ip::{
-    InsecureClientIp,
-    SecureClientIp,
-    SecureClientIpSource
 };
 use api::endpoints::{
     register,
@@ -25,6 +20,7 @@ mod api;
 
 
 const HMAC_KEY: &[u8] = dotenv!("HMAC_KEY").as_bytes();
+const SQLITE_DB_NAME: &str = dotenv!("SQLITE_DB_NAME");
 
 #[derive(Clone)]
 pub struct CarnyState {
@@ -33,30 +29,31 @@ pub struct CarnyState {
 
 impl CarnyState {
     pub async fn new() -> Self {
-        match Sqlite::create_database("sqlite://sqlite.db").await {
+        match Sqlite::create_database(SQLITE_DB_NAME).await {
             Ok(_) => println!("Ok"),
             Err(e) => panic!("Error -> {}", e)
         }
-        let pool = SqlitePool::connect("sqlite://sqlite.db").await.unwrap();
-        let result = sqlx::query(&tables::CREATE_USERS).execute(&pool).await.unwrap();
-        println!("User table creation -> {:?}", result);
+        let pool = SqlitePool::connect(SQLITE_DB_NAME).await.unwrap();
+        let create_user_table_result = sqlx::query(&tables::CREATE_USERS).execute(&pool).await.unwrap();
+        println!("User table creation -> {:?}", create_user_table_result);
+
+        let create_session_result = sqlx::query(&tables::CREATE_SESSION_TOKENS).execute(&pool).await.unwrap();
+        println!("Session Token table creation -> {:?}", create_session_result);
 
         Self { pool }
     }
 }
 
-async fn handler(insecure_ip: InsecureClientIp, secure_ip: SecureClientIp) -> String {
-    format!("{insecure_ip:?} {secure_ip:?}")
-}
 
 #[tokio::main]
 async fn main() {
+    if cfg!(debug_assertions) {
+        env::set_var("RUST_BACKTRACE", "1");
+    }
     let state = CarnyState::new().await;
 
     let app: Router = Router::new()
         .route("/", get(root))
-        .route("/iptest", get(handler))
-        .layer(SecureClientIpSource::ConnectInfo.into_extension())
         .route("/api/register", post(register))
         .route("/api/login", post(login))
         .with_state(state.clone());
