@@ -1,5 +1,23 @@
 use axum::response::Html;
 
+pub async fn hero() -> &'static str {
+    r###"
+    <div class="hero min-h-screen" style="background-image: url(https://i.imgur.com/WT1Un8q.jpg);">
+        <div class="hero-overlay bg-opacity-50"></div>
+        <div class="hero-content text-center text-white">
+            <div class="max-w-md">
+                <h1 class="mb-5 text-5xl font-bold">Carnival</h1>
+                <p class="mb-5">Open source instanced ladder.</p>
+                <a href="https://github.com/zkxjzmswkwl/Carnival" target="_blank" class="btn bg-[#1a8cd8] text-white">
+                    <i class="text-2xl devicon-github-original"></i>
+                    Source code
+                </a>
+            </div>
+        </div>
+    </div>
+    "###
+}
+
 pub async fn register_form() -> &'static str {
     r###"<div class="container mt-4 mx-auto w-1/4 bg-base-200 p-12 rounded-lg">
       <form hx-post="http://localhost:3000/api/register" hx-ext="json-enc" class="join join-vertical w-full">
@@ -23,7 +41,7 @@ pub async fn login_form() -> &'static str {
     </div>"###
 }
 
-pub async fn index() -> String {
+pub async fn base() -> String {
     r###"
         <html>
           <head>
@@ -38,12 +56,23 @@ pub async fn index() -> String {
             <link href="https://cdn.jsdelivr.net/npm/daisyui@3.8.1/dist/full.css" rel="stylesheet" type="text/css" />
             <!-- Tailwind -->
             <script src="https://cdn.tailwindcss.com"></script>
-            <!-- Our shit -->
-            <link rel="stylesheet" href="main.css">
             <!-- Poppins font import -->
             <link rel="preconnect" href="https://fonts.googleapis.com">
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
             <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&display=swap" rel="stylesheet">
+            <!-- Devicons -->
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/devicons/devicon@v2.15.1/devicon.min.css">
+
+            <!-- I'm not sure it even matters if we shove this into its own file or not.
+            Like, sure, it's not being minified. But do we fucking care? Honestly? -->
+            <style>
+              body {
+                font-family: "Poppins"
+              }
+              .svg-in-button {
+                fill: #fff !important;
+              }
+            </style>
           </head>
           <body>
 
@@ -68,7 +97,7 @@ pub async fn index() -> String {
 
               <!-- Righthand side -->
               <div class="navbar-end">
-                <img class="w-10 rounded-full" src="https://pbs.twimg.com/profile_images/1605042959858036736/l8bFPAzw_400x400.jpg" />
+                <img class="w-10 rounded-full" src="https://i.imgur.com/RfOQHPc.png" />
               </div>
             </div>
             <!-- HEADER END   -->
@@ -79,8 +108,16 @@ pub async fn index() -> String {
     "###.to_string()
 }
 
+pub async fn index() -> Html<String> {
+    Html(base().await.replace(
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            r###"<div hx-get="http://localhost:3000/components/hero" hx-trigger="load" hx-target="#app""></div>"###
+        )
+    )
+}
+
 pub async fn login_route() -> Html<String> {
-    Html(index().await.replace(
+    Html(base().await.replace(
             "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
             r###"<div hx-get="http://localhost:3000/components/login" hx-trigger="load" hx-target="#app""></div>"###
         )
@@ -88,7 +125,7 @@ pub async fn login_route() -> Html<String> {
 }
 
 pub async fn register_route() -> Html<String> {
-    Html(index().await.replace(
+    Html(base().await.replace(
             "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
             r###"<div hx-get="http://localhost:3000/components/registration" hx-trigger="load" hx-target="#app""></div>"###
         )
