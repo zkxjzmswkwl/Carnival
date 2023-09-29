@@ -13,9 +13,7 @@ dotenv = "0.15.0"
 dotenv_codegen = "0.15.0"
 easy_password = "0.1.4"
 rand = {version = "0.8.5", features = ["std_rng"]}
-rand_chacha = "0.3.1"
 serde = "1.0.188"
 serde_json = "1.0.107"
 sqlx = {version = "0.7.1", features = ["sqlite", "runtime-tokio"]}
 tokio = {version = "1.32.0", features = ["full"]}
-uuid = {vesrion = "1.4.1", features = ["v4", "fast-rng"]}
