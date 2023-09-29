@@ -1,17 +1,18 @@
 #[allow(dead_code)]
 #[derive(sqlx::FromRow, Debug)]
 pub struct SessionToken {
-    for_user: i32,
-    remote_addr: String,
-    unique_hmac_key: String,
-    token: String,
-    is_valid: bool
+    pub for_user: i32,
+    pub remote_addr: String,
+    pub unique_hmac_key: String,
+    pub token: String,
+    pub is_valid: bool,
+    pub invalidation_source: String
 }
 
 #[allow(dead_code)]
 #[derive(sqlx::FromRow, Debug)]
 pub struct User {
-    id: i32,
+    pub id: i32,
     username: String,
     password: String,
     battletag: String

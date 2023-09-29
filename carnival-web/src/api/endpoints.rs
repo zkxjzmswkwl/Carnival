@@ -9,8 +9,9 @@ use axum::{
 use crate::{
     api::payloads::{RegisterInput, LoginInput},
     CarnyState,
-    db::services::{user::{userid_by_username, self}, session_token::create_session_token}, HMAC_KEY
+    db::services::user::{self}, HMAC_KEY
 };
+use crate::db::services::session_token as session;
 
 pub async fn register(
     State(state): State<CarnyState>,
@@ -48,43 +49,37 @@ pub async fn register(
 
 #[axum_macros::debug_handler]
 pub async fn login(
-    ConnectInfo(conn): ConnectInfo<SocketAddr>,
+    ConnectInfo(connection): ConnectInfo<SocketAddr>,
     State(state): State<CarnyState>,
     Json(post_data): Json<LoginInput>
 ) -> (StatusCode, String) {
 
-    println!("{:#?}", conn);
-    let mut remote_addr = conn.to_string();
-    if remote_addr.contains(":") {
-        remote_addr = remote_addr.split(":").next().unwrap().to_string();
-        println!("{remote_addr}")
-    }
     let username: &str = post_data.get_username();
     let password: &str = post_data.get_password();
 
-    // TODO: This can and should be consolidated into one query, see above TODO.
-    if !user::does_username_exist(username, &state.pool).await {
-        return (StatusCode::BAD_REQUEST, "User does not exist".to_string());
-    }
+    let user_result = user::user_by_username(username, &state.pool).await;
+    let user = match user_result {
+        Ok(unwrapped_user) => unwrapped_user,
+        Err(_) => return (StatusCode::BAD_REQUEST, "User does not exist".to_string())
+    };
 
-    let user = user::user_by_username(username, &state.pool).await;
-    if !user.is_ok() {
-        return (StatusCode::INTERNAL_SERVER_ERROR,
-            "Error fetching user".to_string());
-    }
-
-    if verify_password(password, user.unwrap().get_password(), HMAC_KEY).unwrap() {
-        // TODO: This can and should be consolidated into one query, see above TODO.
-        let userid = userid_by_username(username, &state.pool).await;
-        if userid.is_none() {
-            return (StatusCode::BAD_REQUEST, "User does not exist".to_string());
+    if verify_password(password, user.get_password(), HMAC_KEY).unwrap() {
+        let needs_token = session::token_by_user_id(user.id, &state.pool).await.is_none();
+        if needs_token {
+            let session = session::create(&connection, user.id, &state.pool).await;
+            if session.is_none() {
+                return (StatusCode::INTERNAL_SERVER_ERROR, "Could not create token".to_string());
+            }
+            return (StatusCode::OK, session.unwrap());
         }
 
-        let session_token = create_session_token(&remote_addr, userid.unwrap(), &state.pool).await ;
-        if session_token.is_none() {
-            return (StatusCode::INTERNAL_SERVER_ERROR, "Could not create token".to_string());
+        // This would typically mean someone's being a lil illicit (stealing someone's token)
+        //      HELP-WANTED: Automatically file fbi.gov ic3 report. Cyber crime is no joke.
+        //      Very serious. So super serious.
+        match session::validate(&connection, user.id, &state.pool).await {
+            Some(token) => return (StatusCode::OK, token),
+            None        => return (StatusCode::NOT_ACCEPTABLE, "Fuck you?".to_string())
         }
-        return (StatusCode::OK, session_token.unwrap());
     }
 
     return (StatusCode::BAD_REQUEST, "Incorrect username or password".to_string());
