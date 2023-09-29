@@ -4,7 +4,6 @@ extern crate dotenv_codegen;
 use std::{net::SocketAddr, env};
 use http::{Method, HeaderName};
 use rendering::components::{register_form, login_form, login_route, register_route};
-use tower::{ServiceBuilder, ServiceExt, Service};
 use tower_http::cors::{Any, CorsLayer};
 use axum::{
     routing::{get, post},
