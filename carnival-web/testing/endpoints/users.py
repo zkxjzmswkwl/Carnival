@@ -25,6 +25,13 @@ class Test:
 
     def check(self, response) -> bool:
         self.actual = response
+
+        if self.expected.response_body is None:
+            self.expected.response_body = "N/A: status_code only check"
+            if self.expected.status_code == response.status_code:
+                return self.success()
+            return self.fail()
+
         if self.actual == self.expected:
             return self.success()
         return self.fail()
@@ -70,10 +77,10 @@ class RegisterMismatchedPasswords(Test):
 
     def test(self) -> Response:
         payload = {
-            "username": "testuser69",
+            "username": "1realuserwow",
             "password": "123123",
-            "password_conf": "123123123",
-            "battletag": "Fuey500#12333"
+            "password_conf": "123123",
+            "battletag": "riealuser#12333"
         }
         return post_get_response(endpoint="api/register",
                                  json_payload=payload)
@@ -95,7 +102,23 @@ class BattletagExists(Test):
                                  json_payload=payload)
 
 
+class Login(Test):
+    def __init__(self):
+        super().__init__("Login", Response(200, None))
+
+    def test(self) -> Response:
+        payload = {
+            "username": "cartertest",
+            "password": "123123",
+        }
+        return post_get_response(endpoint="api/login", json_payload=payload)
+
+
 def test_users():
+    login = Login()
+    login_resp = login.test()
+    login.check(login_resp)
+
     not_exist = UserNotExist()
     not_exist_resp = not_exist.test()
     not_exist.check(not_exist_resp)

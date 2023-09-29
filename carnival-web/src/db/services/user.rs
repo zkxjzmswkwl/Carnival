@@ -2,9 +2,8 @@ use anyhow::Result;
 use easy_password::bcrypt::hash_password;
 use sqlx::{SqlitePool, sqlite::SqliteQueryResult, Sqlite};
 
-use crate::HMAC_KEY;
+use crate::{HMAC_KEY, db::models::User};
 
-use super::models::User;
 
 pub async fn user_by_username(
     username: &str,
@@ -20,6 +19,27 @@ pub async fn user_by_username(
         Ok(result) => Ok(result),
         Err(e) => Err(e)
     }
+}
+
+pub async fn userid_by_username(
+    username: &str,
+    pool: &SqlitePool
+) -> Option<i32> {
+    // Should just be id, but not sure what size of integer it'd be, since SQLite `INTEGER` is
+    // dynamic, apparently.
+    // From SQLite docs:
+    //      INTEGER – 
+    //      any numeric value is stored as a signed integer value (It can hold both positive and negative integer values).
+    //      The INTEGER values in SQLite are stored in either 1, 2, 3, 4, 6, or 8 bytes of storage depending on the value of the number.
+    let query_result: Result<i32, sqlx::Error> = sqlx::query_scalar("SELECT id FROM users WHERE username = $1")
+        .bind(username)
+        .fetch_one(pool)
+        .await;
+
+    if let Ok(unwrapped_userid) = query_result {
+        return Some(unwrapped_userid);
+    }
+    None
 }
 
 async fn does_exist<T>(query: &str, column_value: &str, pool: &SqlitePool) -> bool
