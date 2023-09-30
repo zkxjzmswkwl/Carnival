@@ -34,10 +34,10 @@ impl CarnyState {
             Err(e) => panic!("Error -> {}", e)
         }
         let pool = SqlitePool::connect(SQLITE_DB_NAME).await.unwrap();
-        let create_user_table_result = sqlx::query(&tables::CREATE_USERS).execute(&pool).await.unwrap();
+        let create_user_table_result = sqlx::query(tables::CREATE_USERS).execute(&pool).await.unwrap();
         println!("User table creation -> {:?}", create_user_table_result);
 
-        let create_session_result = sqlx::query(&tables::CREATE_SESSION_TOKENS).execute(&pool).await.unwrap();
+        let create_session_result = sqlx::query(tables::CREATE_SESSION_TOKENS).execute(&pool).await.unwrap();
         println!("Session Token table creation -> {:?}", create_session_result);
 
         Self { pool }

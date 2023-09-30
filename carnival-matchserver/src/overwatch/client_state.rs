@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[allow(dead_code)]
+#[allow(clippy::enum_variant_names)]
 #[derive(Default, PartialEq, Debug, Serialize, Deserialize)]
 enum Menu {
     MainMenu,
