@@ -3,7 +3,7 @@ extern crate dotenv_codegen;
 
 use std::{net::SocketAddr, env};
 use http::{Method, HeaderName};
-use rendering::components::{register_form, login_form, hero};
+use rendering::components::{register_form, login_form, hero, queue_table};
 use rendering::routes::{register_route, login_route, index, queue_route, leaderboard_route, profile_route};
 use tower_http::cors::{Any, CorsLayer};
 use axum::{
@@ -89,6 +89,7 @@ async fn main() {
            CONTENT_TYPE,
            HeaderName::from_lowercase(b"hx-request").unwrap(),
            HeaderName::from_lowercase(b"hx-current-url").unwrap(),
+           HeaderName::from_lowercase(b"hx-target").unwrap(),
         ]);
 
     let app: Router = Router::new()
@@ -103,6 +104,7 @@ async fn main() {
         .route("/components/registration", get(register_form))
         .route("/components/login", get(login_form))
         .route("/components/hero", get(hero))
+        .route("/components/queue_table", get(queue_table))
         // Endpoints
         .route("/api/register", post(register))
         .route("/api/login", post(login))

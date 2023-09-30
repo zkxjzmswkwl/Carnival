@@ -133,8 +133,8 @@ pub async fn base() -> String {
                   <li><a>Leaderboard</a></li>
                   <!-- TODO: Implement an isAuthed check, display Play, Settings if authed. If not, display Register, Login -->
                   <li><a>Play</a></li>
-                  <li><a href="/register">Register</a></li>
-                  <li><a href="/login">Login</a></li>
+                  <!-- <li><a href="/register">Register</a></li> -->
+                  <!-- <li><a href="/login">Login</a></li> -->
                   <li><a>Settings</a></li>
                 </ul>
               </div>
@@ -150,6 +150,51 @@ pub async fn base() -> String {
           </body>
         </html>
     "###.to_string()
+}
+
+/// Serves purely static data atm. Will finish when I wake up - Carter
+pub async fn queue_table() -> &'static str {
+  r###"
+      <div class="cotainer p-4 bg-base-200 ovrflow-x-auto mx-auto w-1/2 mt-4">
+          <div clas="flex flex-col mb-2">
+              <!-- Queue title, changes for each queue -->
+              <div class="text-3xl font-bold text-[#ddd] mb-2">Queue</div>
+              <!-- User information (Username, avatar, win/loss, rating, %, etc.) -->
+              <div class="flex flex-row justify-between mb-2">
+                  <div class="text-lg text-[#ddd] mb-2 pl-1 pt-[8px]">Carter</div>
+                  <button class="btn btn-sm bg-[#1a8cd8] text-white w-1/6">
+                      <span class="loading loading-infinity loading-md"></span>
+                      Queued
+                  </button>
+              </div>
+          </div>
+
+          <table class="table">
+              <thead class="bg-base-300">
+                  <tr class="boder-bottom border-[#1a8cd8]">
+                      <th class="text-lg">Player</th>
+                      <th class="text-lg">Role</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                      <tr>
+                          <td>Test123</td>
+                          <td>Tank</td>
+                      </tr>
+                      <!-- Set bg-base-200 and border-l-4 for only the current user's table row (if they're in queue) -->
+                      <tr class="bg-base-300 border-l-4 border-l-[#1a8cd8]">
+                          <td>Carter</td>
+                          <td>DPS</td>
+                      </tr>
+                      <tr>
+                          <td>09231uj0ewid</td>
+                          <td>Support</td>
+                      </tr>
+                  </tbody>
+              </thead>
+          </table>
+      </div>
+  </div>"###
 }
 
 
