@@ -56,14 +56,16 @@ pub async fn user_id_by_username(
 
 async fn does_exist<T>(query: &str, column_value: &str, pool: &SqlitePool) -> bool
 where
-    T: for<'r> sqlx::FromRow<'r, <Sqlite as sqlx::Database>::Row>
+    T: for<'r> sqlx::FromRow<'r, <Sqlite as sqlx::Database>::Row>,
+    T: Send + Unpin, 
+
 {
-    let users = sqlx::query_as::<_, User>(query)
+    let users = sqlx::query_as::<_, T>(query)
         .bind(column_value)
         .fetch_all(pool)
         .await;
 
-    users.map(|u| u.len() > 0).unwrap_or_default()
+    users.map(|u| !u.is_empty()).unwrap_or_default()
 }
 
 pub async fn does_username_exist(username: &str, pool: &SqlitePool) -> bool {
@@ -88,4 +90,30 @@ pub async fn create_user(
         .bind(battletag)
         .execute(pool)
         .await
+}
+
+pub async fn from_vec_ids(
+    user_id_list: &Vec<i32>,
+    pool: &SqlitePool
+) -> Result<Vec<User>, sqlx::Error> {
+
+    // (id1, id2, id3, etc)
+    let mut sql_id_list: String = String::new();
+    // This all seems very silly
+    sql_id_list.push_str("(");
+    for (idx, user_id) in user_id_list.iter().enumerate() {
+        let id = format!("{},", user_id.to_string());
+        // If it's not the last id, append `id,`
+        if idx != user_id_list.len() - 1 {
+            sql_id_list.push_str(&id);
+        } else {
+            // If it is, append a slice not including , `id`
+            // This feels wrong so it probably is. 😎
+            sql_id_list.push_str(&format!("{})", &id[0..id.len() - 1])[..]);
+        }
+    }
+
+    sqlx::query_as::<_, User>(
+        &format!("SELECT * FROM users WHERE id IN {}", sql_id_list)[..]
+    ).fetch_all(pool).await
 }
