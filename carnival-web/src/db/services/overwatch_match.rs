@@ -138,14 +138,11 @@ pub async fn get_team(
     pool: &SqlitePool
 ) -> Result<Vec<OverwatchMatchPlayer>, sqlx::Error> {
 
-   sqlx::query_as::<_, OverwatchMatchPlayer>(
-        "SELECT * FROM
-        overwatch_match_players WHERE
-        match_id = $1 AND
-        team_id = $2"
+   sqlx::query_file_as_unchecked!(
+        OverwatchMatchPlayer,
+        "sql/players_by_team_match.sql",
+        match_id,team_id
     )
-    .bind(match_id)
-    .bind(team_id)
     .fetch_all(pool)
     .await
 }
