@@ -16,13 +16,6 @@ pub async fn add_user_to_queue(
     ).execute(pool).await
 }
 
-
-
-// queue_id  id  role     username      title
-// --------  --  -------  ------------  ----------
-// 1         1   Tank     1realuserwow  Test queue
-// 1         2   DPS      cartertest    Test queue
-// 1         3   Support  carter123     Test queue
 #[derive(Default, Debug)]
 pub struct ResolvedQueuePlayer {
     pub role: String,
@@ -63,17 +56,18 @@ impl ResolvedQueue {
         let mut ret = Self::default();
         ret.id = queue_id;
 
-        let queued_players_opt = players_in_queue(queue_id, pool).await;
-        if let Some(queued_players) = queued_players_opt {
-            for player in queued_players {
-                match player.role.as_str() {
-                    "Tank"    => ret.tanks.push(player),
-                    "DPS"     => ret.dps.push(player),
-                    "Support" => ret.supports.push(player),
-                    _ => println!("This should never happen.")
-                }
+        let queued_players = players_in_queue(queue_id, pool).await;
+        if queued_players.is_none() {
+            return ret;
+        }
+        for player in queued_players.unwrap() {
+            match player.role.as_str() {
+                "Tank"    => ret.tanks.push(player),
+                "DPS"     => ret.dps.push(player),
+                "Support" => ret.supports.push(player),
+                _ => println!("This should never happen.")
             }
         }
-        ret
+        return ret;
     }
 }
