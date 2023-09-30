@@ -17,6 +17,7 @@ use api::endpoints::{
 };
 use sqlx::{SqlitePool, Sqlite, migrate::MigrateDatabase};
 use crate::db::queries::tables;
+use crate::db::services::overwatch_match::ResolvedOverwatchMatch;
 use crate::db::services::queue::ResolvedQueue;
 
 mod db;
@@ -71,8 +72,8 @@ impl CarnyState {
         // create_map("Busan", "KOTH", &pool).await;
         // create_map("Antarctic Peninsula", "KOTH", &pool).await.map_err(|e| eprintln!("{e}"));
 
-        // let m = ResolvedOverwatchMatch::from_id(1, &pool).await;
-        let m = ResolvedQueue::from_id(1, &pool).await;
+        let m = ResolvedOverwatchMatch::from_id(1, &pool).await;
+        // let m = ResolvedQueue::from_id(1, &pool).await;
         println!("{:#?}", m);
 
         Self { pool }
