@@ -1,7 +1,6 @@
 use sqlx::{SqlitePool, sqlite::SqliteQueryResult};
 
 use crate::db::models::{User, QueuedPlayer};
-use super::user;
 
 pub async fn add_user_to_queue(
     queue_id: i32,
@@ -10,9 +9,8 @@ pub async fn add_user_to_queue(
     pool: &SqlitePool
 ) -> Result<SqliteQueryResult, sqlx::Error> {
 
-    sqlx::query!(
-        "INSERT INTO queued_players (queue_id, user_id, role) VALUES (?, ?, ?);",
-        queue_id, user_id, role
+    sqlx::query_file!(
+        "sql/insert_queued_player.sql"queue_id, queue_id, user_id, role
     ).execute(pool).await
 }
 
