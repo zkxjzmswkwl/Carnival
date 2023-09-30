@@ -1,14 +1,13 @@
-
-use overwatch::{state_handler::StateHandler, actions::Actions};
-use tracing_subscriber::filter::LevelFilter;
 use crate::config::Config;
+use overwatch::{actions::Actions, state_handler::StateHandler};
+use tracing_subscriber::filter::LevelFilter;
 
+mod config;
 mod input;
 mod overwatch;
-mod config;
 
 use color_eyre::eyre::Result;
-fn main() ->  Result<()> {
+fn main() -> Result<()> {
     let mut log_level = LevelFilter::ERROR;
     if cfg!(debug_assertions) {
         log_level = LevelFilter::TRACE;
@@ -20,22 +19,22 @@ fn main() ->  Result<()> {
         .with_max_level(log_level)
         .init();
 
-
     overwatch::client_prelude()?;
     let mut state_handler: StateHandler = StateHandler::default();
     // state_handler.test_set_dummy_data().dump();
     state_handler.restore();
-    println!("{:#?}", state_handler);
+    println!("{state_handler:#?}");
 
     let config = Config::load();
-    println!("{:#?}", config);
+    println!("{config:#?}");
 
     let mut action_chains = Actions::default();
     action_chains.load();
-    action_chains.invoke_chain("custom_lobby".to_string());
-    action_chains.invoke_chain("move_self_spec".to_string());
-    action_chains.invoke_chain("set_preset".to_string());
-    action_chains.invoke_chain("set_invite_only".to_string());
+    action_chains
+        .invoke_chain("custom_lobby")
+        .invoke_chain("move_self_spec")
+        .invoke_chain("set_preset")
+        .invoke_chain("set_invite_only");
 
     Ok(())
 }

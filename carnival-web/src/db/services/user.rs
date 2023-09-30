@@ -56,14 +56,16 @@ pub async fn user_id_by_username(
 
 async fn does_exist<T>(query: &str, column_value: &str, pool: &SqlitePool) -> bool
 where
-    T: for<'r> sqlx::FromRow<'r, <Sqlite as sqlx::Database>::Row>
+    T: for<'r> sqlx::FromRow<'r, <Sqlite as sqlx::Database>::Row>,
+    T: Send + Unpin, 
+
 {
-    let users = sqlx::query_as::<_, User>(query)
+    let users = sqlx::query_as::<_, T>(query)
         .bind(column_value)
         .fetch_all(pool)
         .await;
 
-    users.map(|u| u.len() > 0).unwrap_or_default()
+    users.map(|u| !u.is_empty()).unwrap_or_default()
 }
 
 pub async fn does_username_exist(username: &str, pool: &SqlitePool) -> bool {

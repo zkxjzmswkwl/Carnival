@@ -18,10 +18,11 @@ pub async fn register(
     Json(post_data): Json<RegisterInput>
 )-> (StatusCode, String) {
 
-    let username: &str = post_data.get_username();
-    let password: &str = post_data.get_password();
-    let password_conf: &str = post_data.get_password_conf();
-    let battletag: &str = post_data.get_battletag();
+    // NOTE(aalhendi): is this needed?
+    let username: &str = &post_data.username;
+    let password: &str = &post_data.password;
+    let password_conf: &str = &post_data.password_conf;
+    let battletag: &str = &post_data.battletag;
 
     if password != password_conf {
         return (StatusCode::BAD_REQUEST,
@@ -38,11 +39,11 @@ pub async fn register(
     }
 
     match user::create_user(username, password, battletag, &state.pool).await {
-        Ok(_) => return (StatusCode::OK, "Created".to_string()),
+        Ok(_) => (StatusCode::OK, "Created".to_string()),
         Err(e) => {
             eprintln!("{e}");
-            return (StatusCode::INTERNAL_SERVER_ERROR,
-                    "Error creating user.".to_string());
+            (StatusCode::INTERNAL_SERVER_ERROR,
+                    "Error creating user.".to_string())
         }
     }
 }
@@ -54,8 +55,8 @@ pub async fn login(
     Json(post_data): Json<LoginInput>
 ) -> (StatusCode, String) {
 
-    let username: &str = post_data.get_username();
-    let password: &str = post_data.get_password();
+    let username: &str = &post_data.username;
+    let password: &str = &post_data.password;
 
     let user_result = user::user_by_username(username, &state.pool).await;
     let user = match user_result {
@@ -63,7 +64,7 @@ pub async fn login(
         Err(_) => return (StatusCode::BAD_REQUEST, "User does not exist".to_string())
     };
 
-    if verify_password(password, user.get_password(), HMAC_KEY).unwrap() {
+    if verify_password(password, &user.password, HMAC_KEY).unwrap() {
         let needs_token = session::token_by_user_id(user.id, &state.pool).await.is_none();
         if needs_token {
             let session = session::create(&connection, user.id, &state.pool).await;
@@ -82,5 +83,5 @@ pub async fn login(
         }
     }
 
-    return (StatusCode::BAD_REQUEST, "Incorrect username or password".to_string());
+    (StatusCode::BAD_REQUEST, "Incorrect username or password".to_string())
 }
