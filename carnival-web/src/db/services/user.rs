@@ -90,7 +90,6 @@ pub async fn create_user(
         .await
 }
 
-
 pub async fn from_vec_ids(
     user_id_list: &Vec<i32>,
     pool: &SqlitePool

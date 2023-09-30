@@ -18,7 +18,7 @@ pub mod tables {
             id INTEGER PRIMARY KEY UNIQUE NOT NULL,
             name VARCHAR(64) UNIQUE NOT NULL,
             mode VARCHAR(64) NOT NULL
-        )";
+        );";
 
     pub const CREATE_OW_MATCH_THRU: &'static str = "CREATE TABLE IF NOT EXISTS
         overwatch_match_players (
@@ -32,5 +32,20 @@ pub mod tables {
         overwatch_match (
             id INTEGER PRIMARY KEY UNIQUE NOT NULL,
             map_id INTEGER NOT NULL
-        )"; 
+        );"; 
+    
+    pub const CREATE_QUEUE: &'static str = "CREATE TABLE IF NOT EXISTS
+        queues (
+            id INTEGER PRIMARY KEY UNIQUE NOT NULL,
+            title VARCHAR(100) UNIQUE NOT NULL,
+            demographic VARCHAR(100) UNIQUE NOT NULL
+        );";
+    
+    pub const CREATE_QUEUED_PLAYERS: &'static str = "CREATE TABLE IF NOT EXISTS
+        queued_players (
+            id INTEGER PRIMARY KEY UNIQUE NOT NULL,
+            queue_id INTEGER NOT NULL,
+            user_id INTEGER UNIQUE NOT NULL,
+            role VARCHAR(16) NOT NULL
+        );";
 }

@@ -16,9 +16,8 @@ use api::endpoints::{
     login
 };
 use sqlx::{SqlitePool, Sqlite, migrate::MigrateDatabase};
-use crate::db::models::ResolvedOverwatchMatch;
 use crate::db::queries::tables;
-use crate::db::services::overwatch_match::{create_map, create_match};
+use crate::db::services::queue::ResolvedQueue;
 
 mod db;
 mod api;
@@ -57,13 +56,20 @@ impl CarnyState {
         let create_ow_match_result = sqlx::query(&tables::CREATE_OW_MATCH).execute(&pool).await.unwrap();
         println!("Overwatch Match table creation -> {:?}", create_ow_match_result);
 
+        let create_queue_result = sqlx::query(&tables::CREATE_QUEUE).execute(&pool).await.unwrap();
+        println!("Queue table creation -> {:?}", create_queue_result);
+
+        let create_queued_players_result = sqlx::query(&tables::CREATE_QUEUED_PLAYERS).execute(&pool).await.unwrap();
+        println!("Queued Players table creation -> {:?}", create_queued_players_result);
+
         // create_map("Lijiang Tower", "KOTH", &pool).await;
         // create_map("Ilios", "KOTH", &pool).await;
         // create_map("Nepal", "KOTH", &pool).await;
         // create_map("Busan", "KOTH", &pool).await;
         // create_map("Antarctic Peninsula", "KOTH", &pool).await.map_err(|e| eprintln!("{e}"));
 
-        let m = ResolvedOverwatchMatch::from_id(1, &pool).await;
+        // let m = ResolvedOverwatchMatch::from_id(1, &pool).await;
+        let m = ResolvedQueue::from_id(1, &pool).await;
         println!("{:#?}", m);
 
         Self { pool }
