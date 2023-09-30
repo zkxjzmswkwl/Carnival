@@ -91,3 +91,29 @@ pub async fn create_user(
         .execute(pool)
         .await
 }
+
+pub async fn from_vec_ids(
+    user_id_list: &Vec<i32>,
+    pool: &SqlitePool
+) -> Result<Vec<User>, sqlx::Error> {
+
+    // (id1, id2, id3, etc)
+    let mut sql_id_list: String = String::new();
+    // This all seems very silly
+    sql_id_list.push_str("(");
+    for (idx, user_id) in user_id_list.iter().enumerate() {
+        let id = format!("{},", user_id.to_string());
+        // If it's not the last id, append `id,`
+        if idx != user_id_list.len() - 1 {
+            sql_id_list.push_str(&id);
+        } else {
+            // If it is, append a slice not including , `id`
+            // This feels wrong so it probably is. 😎
+            sql_id_list.push_str(&format!("{})", &id[0..id.len() - 1])[..]);
+        }
+    }
+
+    sqlx::query_as::<_, User>(
+        &format!("SELECT * FROM users WHERE id IN {}", sql_id_list)[..]
+    ).fetch_all(pool).await
+}
