@@ -1,4 +1,30 @@
-use axum::response::Html;
+/*--------------------------------------------------
+ * Javascript
+--------------------------------------------------*/
+pub fn animated_header(header_text: String) -> String {
+    r###"
+    <script>
+      // cba. Let's us avoid Javascript's async execution from fucking us.
+      document.getElementById('animated-header').textContent = document.getElementById('animated-header').textContent = "^.^"
+      document.getElementById('animated-header').innerHTML = document.getElementById('animated-header').textContent.replace(/\S/g, '<span class=\"letter\">$&</span>');
+      anime.timeline({loop: false})
+        .add({
+          targets: '#animated-header .letter',
+          translateX: [40, 0],
+          translateZ: 0,
+          opacity: [0, 1],
+          easing: 'easeOutExpo',
+          duration: 700,
+          delay: (el, i) => 500 + 30 * i
+        }).add({
+          targets: '#animated-header',
+          backgroundSize: '100%',
+          duration: 800,
+          easing: 'easeOutExpo'
+        });
+      </script>
+      "###.replace("^.^", &header_text)
+}
 
 pub async fn hero() -> &'static str {
     r###"
@@ -18,8 +44,10 @@ pub async fn hero() -> &'static str {
     "###
 }
 
-pub async fn register_form() -> &'static str {
-    r###"<div class="container mt-4 mx-auto w-1/4 bg-base-200 p-12 rounded-lg">
+pub async fn register_form() -> String {
+    let js = animated_header("Register".to_string());
+    r###"<div class="container mt-4 mx-auto w-1/4 bg-base-200 p-6 rounded-lg">
+      <div class="mb-3"><span id="animated-header" class="text-2xl text-white font-bold"></span></div>
       <form hx-post="http://localhost:3000/api/register" hx-ext="json-enc" class="join join-vertical w-full">
         <input name="username" type="text" placeholder="Username" class="input input-bordered rounded-lg mb-2 w-full">
         <input name="battletag" type="text" placeholder="Battletag (Case sensitive)" class="input input-bordered rounded-lg mb-2 w-full">
@@ -27,18 +55,24 @@ pub async fn register_form() -> &'static str {
         <input name="password_conf" type="password" placeholder="Password confirmation" class="input input-bordered rounded-lg mb-2 w-full">
         <button class="btn btn-wide bg-[#1a8cd8] text-white w-full">Register</button>
       </form>
-    </div>"###
+    </div>
+    ^.^"###.replace("^.^", &js)
 }
 
-pub async fn login_form() -> &'static str {
+pub async fn login_form() -> String {
+    let js = animated_header("Login".to_string());
     r###"
-    <div class="container mt-4 mx-auto w-1/4 bg-base-200 p-12 rounded-lg">
+    <div class="container mt-4 mx-auto w-1/4 bg-base-200 p-6 rounded-lg">
+      <div class="mb-3"><span id="animated-header" class="text-2xl text-white font-bold"></span></div>
       <form hx-post="http://localhost:3000/api/login" hx-ext="json-enc" class="join join-vertical w-full">
         <input name="username" type="text" placeholder="Username" class="input input-bordered rounded-lg mb-2 w-full">
         <input name="password" type="password" placeholder="Password" class="input input-bordered rounded-lg mb-2 w-full">
         <button class="btn btn-wide bg-[#1a8cd8] text-white w-full">Login</button>
       </form>
-    </div>"###
+    </div>
+    ^.^
+    "###.replace("^.^", &js)
+
 }
 
 pub async fn base() -> String {
@@ -62,15 +96,25 @@ pub async fn base() -> String {
             <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&display=swap" rel="stylesheet">
             <!-- Devicons -->
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/devicons/devicon@v2.15.1/devicon.min.css">
+            <!-- Anime.js (not weeb shit, animations) -->
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/2.0.2/anime.min.js"></script>
 
-            <!-- I'm not sure it even matters if we shove this into its own file or not.
-            Like, sure, it's not being minified. But do we fucking care? Honestly? -->
+            <!-- I'm not sure it even matters if we shove this into its own file or not. Like, sure, it's not being minified. But do we fucking care? Honestly? -->
             <style>
               body {
                 font-family: "Poppins"
               }
               .svg-in-button {
                 fill: #fff !important;
+              }
+              #animated-header {
+                background-image: linear-gradient(transparent calc(97% - 1px), #1a8cd8 2px);
+                background-size: 0;
+                background-repeat: no-repeat;
+                display: infinite;
+              }
+              #animated-header .letter {
+                display: inline-block;
               }
             </style>
           </head>
@@ -108,26 +152,4 @@ pub async fn base() -> String {
     "###.to_string()
 }
 
-pub async fn index() -> Html<String> {
-    Html(base().await.replace(
-            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            r###"<div hx-get="http://localhost:3000/components/hero" hx-trigger="load" hx-target="#app""></div>"###
-        )
-    )
-}
 
-pub async fn login_route() -> Html<String> {
-    Html(base().await.replace(
-            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            r###"<div hx-get="http://localhost:3000/components/login" hx-trigger="load" hx-target="#app""></div>"###
-        )
-    )
-}
-
-pub async fn register_route() -> Html<String> {
-    Html(base().await.replace(
-            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            r###"<div hx-get="http://localhost:3000/components/registration" hx-trigger="load" hx-target="#app""></div>"###
-        )
-    )
-}

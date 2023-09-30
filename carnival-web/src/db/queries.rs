@@ -12,4 +12,25 @@ pub mod tables {
         token VARCHAR(250) UNIQUE NOT NULL,
         is_valid BIT NOT NULL,
         invalidation_source VARCHAR(100));";
+
+    pub const CREATE_OW_MAP: &'static str = "CREATE TABLE IF NOT EXISTS
+        overwatch_maps (
+            id INTEGER PRIMARY KEY UNIQUE NOT NULL,
+            name VARCHAR(64) UNIQUE NOT NULL,
+            mode VARCHAR(64) NOT NULL
+        )";
+
+    pub const CREATE_OW_MATCH_THRU: &'static str = "CREATE TABLE IF NOT EXISTS
+        overwatch_match_players (
+            id INTEGER PRIMARY KEY UNIQUE NOT NULL,
+            user_id INTEGER NOT NULL,
+            match_id INTEGER NOT NULL,
+            team_id INTEGER NOT NULL
+        );";
+
+    pub const CREATE_OW_MATCH: &'static str = "CREATE TABLE IF NOT EXISTS
+        overwatch_match (
+            id INTEGER PRIMARY KEY UNIQUE NOT NULL,
+            map_id INTEGER NOT NULL
+        )"; 
 }

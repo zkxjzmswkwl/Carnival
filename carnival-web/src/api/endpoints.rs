@@ -86,6 +86,15 @@ pub async fn login(
         }
 
         // Validate that the token hasn't been stolen.
+        // TODO: This shouldn't be happening here
+        //      There's no reason to validate the session token on login.
+        //      If someone knows a user's password, they know their password.
+        //      They will still be assigned a token (as of now).
+        //
+        //      This *should* be tossed into middleware of some kind and then 
+        //      invoked prior to execution on any endpoint route that is denoted
+        //      to require authorization.
+        //
         match session::validate(&connection, user.id, &state.pool).await {
             // If it hasn't, cool. Set the cookie and be done with it.
             Some(session) => {
