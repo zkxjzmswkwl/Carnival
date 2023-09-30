@@ -117,5 +117,7 @@ pub async fn login(
     }
   
     // If we haven't dipped yet then this is the only remaining possibility.
-    (StatusCode::BAD_REQUEST, "Incorrect username or password".to_string())
+    *r.status_mut() = StatusCode::BAD_REQUEST;
+    *r.body_mut() = Full::from("Incorrect username or password");
+    r
 }
