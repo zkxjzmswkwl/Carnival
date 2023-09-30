@@ -25,7 +25,9 @@ pub async fn create(
     // Doordash 20 times a week type money. You have no chance of getting it.
     // (This means we can't use a whole ass UUID as the hmac. Dang!)
     let unique_hmac = rand_str();
+    // TODO: This can panic >_< 
     let hashed_addr = hash_password(&connection.ip().to_string(), unique_hmac.as_bytes(), 12).unwrap();
+
     // This looks shit. I think move **all** queries to queries.rs. That makes more sense anyway.
     let insert_result = sqlx::query("INSERT INTO session_tokens 
                 (for_user, remote_addr, unique_hmac_key, token, is_valid)

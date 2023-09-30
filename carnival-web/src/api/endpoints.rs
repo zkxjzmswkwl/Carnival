@@ -1,11 +1,12 @@
 use std::net::SocketAddr;
 
 use easy_password::bcrypt::verify_password;
+use static_str_ops::static_format;
 use axum::{
     extract::{State, ConnectInfo},
-    http::StatusCode,
-    Json
+    Json, response::Response, body::{Full, Bytes}
 };
+use http::{StatusCode, HeaderValue};
 use crate::{
     api::payloads::{RegisterInput, LoginInput},
     CarnyState,
@@ -53,35 +54,68 @@ pub async fn login(
     ConnectInfo(connection): ConnectInfo<SocketAddr>,
     State(state): State<CarnyState>,
     Json(post_data): Json<LoginInput>
-) -> (StatusCode, String) {
+) -> Response<Full<Bytes>> {
+
+    let mut r: Response<Full<Bytes>> = Response::new(Full::from("nil"));
 
     let username: &str = &post_data.username;
     let password: &str = &post_data.password;
-
     let user_result = user::user_by_username(username, &state.pool).await;
+
     let user = match user_result {
         Ok(unwrapped_user) => unwrapped_user,
-        Err(_) => return (StatusCode::BAD_REQUEST, "User does not exist".to_string())
+        // If there is no user by the username posted to us, error out.
+        Err(_) =>  {
+            *r.status_mut() = StatusCode::BAD_REQUEST;
+            *r.body_mut() = Full::from("User does not exist");
+            return r;
+        }
     };
 
     if verify_password(password, &user.password, HMAC_KEY).unwrap() {
+        // checks to see if the requesting user has a valid token already.
         let needs_token = session::token_by_user_id(user.id, &state.pool).await.is_none();
+        // If they don't, create one. 
         if needs_token {
-            let session = session::create(&connection, user.id, &state.pool).await;
-            if session.is_none() {
-                return (StatusCode::INTERNAL_SERVER_ERROR, "Could not create token".to_string());
+            let session_option = session::create(&connection, user.id, &state.pool).await;
+            // This would suck.
+            if session_option.is_none() {
+                *r.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
+                *r.body_mut() = Full::from("Could not create token");
+                return r;
             }
-            return (StatusCode::OK, session.unwrap());
         }
 
-        // This would typically mean someone's being a lil illicit (stealing someone's token)
-        //      HELP-WANTED: Automatically file fbi.gov ic3 report. Cyber crime is no joke.
-        //      Very serious. So super serious.
+        // Validate that the token hasn't been stolen.
+        // TODO: This shouldn't be happening here
+        //      There's no reason to validate the session token on login.
+        //      If someone knows a user's password, they know their password.
+        //      They will still be assigned a token (as of now).
+        //
+        //      This *should* be tossed into middleware of some kind and then 
+        //      invoked prior to execution on any endpoint route that is denoted
+        //      to require authorization.
+        //
         match session::validate(&connection, user.id, &state.pool).await {
-            Some(token) => return (StatusCode::OK, token),
-            None        => return (StatusCode::NOT_ACCEPTABLE, "Fuck you?".to_string())
+            // If it hasn't, cool. Set the cookie and be done with it.
+            Some(session) => {
+                *r.status_mut() = StatusCode::OK;
+                *r.body_mut() = Full::from("Nice");
+                r.headers_mut().insert(
+                    "set-cookie",
+                    HeaderValue::from_str(static_format!("session={}", session)).unwrap()
+                );
+            },
+            // If it has, we get very upset and tell the client that their actions are
+            // "NOT_ACCEPTABLE".
+            None => {
+                *r.status_mut() = StatusCode::NOT_ACCEPTABLE;
+                *r.body_mut() = Full::from("Fuck you?");
+            }
         }
+        return r;
     }
-
+  
+    // If we haven't dipped yet then this is the only remaining possibility.
     (StatusCode::BAD_REQUEST, "Incorrect username or password".to_string())
 }
