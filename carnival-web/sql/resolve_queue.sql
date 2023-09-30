@@ -3,7 +3,8 @@ select
     users.username
 FROM
     (
-            queued_players
-            INNER JOIN users ON queued_players.user_id = users.id
+        queued_players
+        INNER JOIN users ON queued_players.user_id = users.id
     )
-WHERE queue_id = ?;
+WHERE
+    queue_id = ?;

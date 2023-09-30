@@ -114,6 +114,20 @@ class Login(Test):
         return post_get_response(endpoint="api/login", json_payload=payload)
 
 
+class Register(Test):
+    def __init__(self):
+        super().__init__("Register", Response(200, None))
+
+    def test(self) -> Response:
+        payload = {
+            "username": str(uuid.uuid1).replace("-", "")[0:10],
+            "battletag": str(uuid.uuid1).replace("-", "")[0:10],
+            "password": "123123",
+            "password_conf": "123123",
+        }
+        return post_get_response(endpoint="api/register", json_payload=payload)
+
+
 def test_users():
     login = Login()
     login_resp = login.test()
@@ -122,6 +136,10 @@ def test_users():
     not_exist = UserNotExist()
     not_exist_resp = not_exist.test()
     not_exist.check(not_exist_resp)
+
+    register = Register()
+    register_resp = register.test()
+    register.check(register_resp)
 
     reg_mismatched_pw = RegisterMismatchedPasswords()
     reg_mismatched_pw_resp = reg_mismatched_pw.test()
