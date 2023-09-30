@@ -88,6 +88,50 @@ pub async fn get_match_players(
         .await
 }
 
+#[derive(Default, Debug)]
+pub struct ResolvedTeams {
+    blue: Vec<String>,
+    red: Vec<String>
+}
+impl ResolvedTeams {
+    pub async fn for_match(
+        ow_match_id: i32,
+        pool: &SqlitePool
+    ) -> Self {
+
+        let mut ret = ResolvedTeams::default();
+        let blue: Vec<String> = sqlx::query_file_scalar_unchecked!(
+            "sql/resolve_match.sql",
+            ow_match_id,
+            1
+        )
+        .fetch_all(pool)
+        .await
+        .unwrap_or_else(|err| {
+            eprintln!("{err}");
+            // :(
+            vec![":(".to_string()]
+        });
+
+        let red: Vec<String> = sqlx::query_file_scalar_unchecked!(
+            "sql/resolve_match.sql",
+            ow_match_id,
+            1
+        )
+        .fetch_all(pool)
+        .await
+        .unwrap_or_else(|err| {
+            eprintln!("{err}");
+            // :(
+            vec![":(".to_string()]
+        });
+
+        ret.blue = blue;
+        ret.red = red;
+        ret
+    }
+}
+
 pub async fn get_team(
     match_id: i32,
     team_id: u8,
@@ -109,34 +153,16 @@ pub async fn get_team(
 #[derive(Default, Debug)]
 pub struct ResolvedOverwatchMatch {
     pub overwatch_match: OverwatchMatch,
-    pub blue_team: Vec<User>,
-    pub red_team: Vec<User>
+    pub resolved_teams: ResolvedTeams
 }
 
 impl ResolvedOverwatchMatch {
     pub async fn from_id(ow_match_id: i32, pool: &SqlitePool) -> Self {
-        if let Ok(ow_match) = get_match_by_id(ow_match_id, pool).await {
-            // Resolve user objects for all players (blue/red_team)
-            let blue_result = get_team(ow_match_id, 1, pool).await;
-            let red_result = get_team(ow_match_id, 2, pool).await;
-
-            if blue_result.is_ok() && red_result.is_ok() {
-                // Get user_id from each owmatchplayer obj
-                let blue_user_ids = blue_result.unwrap().iter().map(|x| x.user_id).collect();
-                let red_user_ids = red_result.unwrap().iter().map(|x| x.user_id).collect();
-                // From those userids, get Vec<Users> for each team
-                let blue_user_objects = user::from_vec_ids(&blue_user_ids, pool).await.map_err(|e| eprintln!("{e}"));
-                let red_user_objects = user::from_vec_ids(&red_user_ids, pool).await;
-
-                if blue_user_objects.is_ok() && red_user_objects.is_ok() {
-                    return Self {
-                        overwatch_match: ow_match,
-                        blue_team: blue_user_objects.unwrap(),
-                        red_team: red_user_objects.unwrap() 
-                    };
-                }
-            }
-        }
-        return ResolvedOverwatchMatch::default();
+        let overwatch_match = get_match_by_id(ow_match_id, pool).await.unwrap_or_else(|err| {
+            eprintln!("{err}");
+            return OverwatchMatch::default();
+        });
+        let resolved_teams = ResolvedTeams::for_match(ow_match_id, pool).await;
+        Self { overwatch_match, resolved_teams }
     }
 }
