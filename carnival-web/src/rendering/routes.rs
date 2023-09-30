@@ -38,7 +38,7 @@ pub async fn leaderboard_route() -> Html<String> {
 pub async fn queue_route() -> Html<String> {
     Html(base().await.replace(
             "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            r###"<div hx-get="http://localhost:3000/components/queue" hx-trigger="load" hx-target="#app""></div>"###
+            r###"<div hx-get="http://localhost:3000/components/queue_table" hx-trigger="load" hx-target="#app""></div>"###
         )
     )
 }
