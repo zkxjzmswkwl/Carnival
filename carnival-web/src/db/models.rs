@@ -1,4 +1,4 @@
-use sqlx::SqlitePool;
+use sqlx::{SqlitePool, FromRow};
 
 use super::services::{overwatch_match::{get_team, get_match_by_id}, user};
 
@@ -31,6 +31,13 @@ pub struct OverwatchMap {
 }
 
 #[allow(dead_code)]
+#[derive(sqlx::FromRow, Debug, Default)]
+pub struct OverwatchMatch {
+    pub id: i32,
+    pub map_id: i32,
+}
+
+#[allow(dead_code)]
 #[derive(sqlx::FromRow, Debug)]
 pub struct OverwatchMatchPlayer {
     pub id: i32,
@@ -41,46 +48,18 @@ pub struct OverwatchMatchPlayer {
     pub team_id: u8
 }
 
-#[allow(dead_code)]
-#[derive(sqlx::FromRow, Debug, Default)]
-pub struct OverwatchMatch {
+pub struct Queue {
     pub id: i32,
-    pub map_id: i32,
+    pub title: String,
+    pub demographic: String
 }
 
-#[derive(Default, Debug)]
-pub struct ResolvedOverwatchMatch {
-    pub overwatch_match: OverwatchMatch,
-    pub blue_team: Vec<User>,
-    pub red_team: Vec<User>
-}
-
-impl ResolvedOverwatchMatch {
-    pub async fn from_id(ow_match_id: i32, pool: &SqlitePool) -> Self {
-        if let Ok(ow_match) = get_match_by_id(ow_match_id, pool).await {
-            // Resolve user objects for all players (blue/red_team)
-            let blue_result = get_team(ow_match_id, 1, pool).await;
-            let red_result = get_team(ow_match_id, 2, pool).await;
-
-            if blue_result.is_ok() && red_result.is_ok() {
-                // Get user_id from each owmatchplayer obj
-                let blue_user_ids = blue_result.unwrap().iter().map(|x| x.user_id).collect();
-                let red_user_ids = red_result.unwrap().iter().map(|x| x.user_id).collect();
-                // From those userids, get Vec<Users> for each team
-                let blue_user_objects = user::from_vec_ids(&blue_user_ids, pool).await.map_err(|e| eprintln!("{e}"));
-                let red_user_objects = user::from_vec_ids(&red_user_ids, pool).await;
-
-                if blue_user_objects.is_ok() && red_user_objects.is_ok() {
-                    return Self {
-                        overwatch_match: ow_match,
-                        blue_team: blue_user_objects.unwrap(),
-                        red_team: red_user_objects.unwrap() 
-                    };
-                }
-            }
-        }
-        return ResolvedOverwatchMatch::default();
-    }
+#[derive(FromRow)]
+pub struct QueuedPlayer {
+    pub id: i32,
+    pub queue_id: i32,
+    pub user_id: i32,
+    pub role: String
 }
 
 #[allow(dead_code)]
