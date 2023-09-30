@@ -26,7 +26,7 @@ impl StateHandler {
 
     pub fn dump(&self) {
         if let Some(json_str) = self.to_toml() {
-            if !File::create("state_handler.toml").is_ok() {
+            if File::create("state_handler.toml").is_err() {
                 panic!("nope")
             }
             write("state_handler.toml", json_str).expect("Couldn't write state_handler.toml");

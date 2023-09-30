@@ -1,11 +1,8 @@
 use crate::input;
 use serde::{Deserialize, Serialize};
-use toml::map::Map;
-use winput::Mouse;
 use std::collections::HashMap;
 use std::fs::read_to_string;
 use std::{thread, time};
-
 
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Hash)] // TODO: Figure out why I need Copy, Clone and Hash? cbf
@@ -21,19 +18,17 @@ pub struct Actions {
 }
 
 impl Action {
-    pub fn invoke(self) {
-        log::debug!(" Invoking action: \n {:#?}", self);
+    pub fn invoke(&self) {
+        log::debug!(" Invoking action: \n {self:#?}");
         input::click(self.x, self.y);
         thread::sleep(time::Duration::from_millis(self.delay));
     }
 }
 
 impl Actions {
-    pub fn invoke_chain(&self, name: String) -> &Self {
-        let chain = self
-            .chains
-            .get(&name)
-            .expect(&format!("No chain by the name of \"{}\"", &name));
+    pub fn invoke_chain(&self, name: &str) -> &Self {
+        let chain = self.chains.get(name)
+        .unwrap_or_else(|| panic!("No chain by the name of \"{name}\""));
         let chain_len = chain.len();
         log::debug!("Chain \"{name}\" has length of {chain_len}");
 

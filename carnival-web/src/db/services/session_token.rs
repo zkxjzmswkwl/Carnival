@@ -14,35 +14,26 @@ fn rand_str() -> String {
         .collect()
 }
 
-fn parse_remote_addr(connection: &SocketAddr) -> String {
-    let mut remote_addr = connection.to_string();
-    if remote_addr.contains(":") {
-        remote_addr = remote_addr.split(":").next().unwrap().to_string();
-    }
-
-    remote_addr
-}
-
 pub async fn create(
     connection: &SocketAddr,
     user_id: i32,
     pool: &SqlitePool
 ) -> Option<String> {
 
-    let remote_addr = parse_remote_addr(connection);
     // So apparently bcrypt has the concept of "cost". Which caps out at 31 or so.
     // Me personally, have no such concept on account of being extremely wealthy.
     // Doordash 20 times a week type money. You have no chance of getting it.
     // (This means we can't use a whole ass UUID as the hmac. Dang!)
     let unique_hmac = rand_str();
     // TODO: This can panic >_< 
-    let hashed_addr = hash_password(&remote_addr, unique_hmac.as_bytes(), 12).unwrap();
+    let hashed_addr = hash_password(&connection.ip().to_string(), unique_hmac.as_bytes(), 12).unwrap();
+
     // This looks shit. I think move **all** queries to queries.rs. That makes more sense anyway.
     let insert_result = sqlx::query("INSERT INTO session_tokens 
                 (for_user, remote_addr, unique_hmac_key, token, is_valid)
                 VALUES ($1, $2, $3, $4, $5);")
      .bind(user_id)
-     .bind(&remote_addr)
+     .bind(connection.ip().to_string())
      .bind(&unique_hmac)
      .bind(&hashed_addr)
      .bind(true)
@@ -105,12 +96,11 @@ pub async fn validate(
 ) ->  Option<String> {
     if let Some(token) = token_by_user_id(user_id, pool).await {
         // Get remote addr without port
-        let remote_addr = parse_remote_addr(connection);
-        if let Ok(remotes_match) = verify_password(&remote_addr, &token.token, token.unique_hmac_key.as_bytes()) {
+        if let Ok(remotes_match) = verify_password(&connection.ip().to_string(), &token.token, token.unique_hmac_key.as_bytes()) {
             if !remotes_match {
                 // Someone's trying to use a session token bound to a different ip than their current.
                 // Invalidate the session token, forcing the user to reauth with their password.
-                let invalidate = set_invalid(user_id, &remote_addr, pool).await;
+                let invalidate = set_invalid(user_id, &connection.ip().to_string(), pool).await;
                 match invalidate {
                     Ok(_) => println!("invalidation ok"),
                     Err(e) => eprintln!("{e}")

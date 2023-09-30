@@ -47,7 +47,7 @@ pub fn remove_window_decorations(
     // Send input to engine window, without this we have cursor offset issues.
     // I really really don't know why.
     winput::press(Vk::Control);
-    unsafe { SetWindowLongPtrA(hwnd, GWL_STYLE, style as isize) };
+    unsafe { SetWindowLongPtrA(hwnd, GWL_STYLE, style) };
     winput::release(Vk::Control);
 
     // Force window repaint to avoid cursor offset issues.

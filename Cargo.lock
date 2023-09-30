@@ -1858,6 +1858,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "mousepos"
+version = "0.1.0"
+dependencies = [
+ "windows 0.51.1",
+]
+
+[[package]]
 name = "nalgebra"
 version = "0.30.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
