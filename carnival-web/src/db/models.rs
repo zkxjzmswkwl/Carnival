@@ -30,7 +30,7 @@ pub struct OverwatchMap {
     pub mode: String
 }
 
-#[allow(dead_code)]
+#[allow(dead_code, Default, Debug)]
 #[derive(sqlx::FromRow, Debug, Default)]
 pub struct OverwatchMatch {
     pub id: i32,
