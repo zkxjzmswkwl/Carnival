@@ -3,7 +3,7 @@ extern crate dotenv_codegen;
 
 use std::{net::SocketAddr, env};
 use http::{Method, HeaderName};
-use rendering::components::{register_form, login_form, hero, queue_table};
+use rendering::components::{register_form, login_form, hero, queue_table, queue_user_panel};
 use rendering::routes::{register_route, login_route, index, queue_route, leaderboard_route, profile_route};
 use tower_http::cors::{Any, CorsLayer};
 use axum::{
@@ -13,7 +13,7 @@ use axum::{
 };
 use api::endpoints::{
     register,
-    login
+    login, join_queue, leave_queue
 };
 use sqlx::{SqlitePool, Sqlite, migrate::MigrateDatabase};
 use crate::db::queries::tables;
@@ -108,10 +108,18 @@ async fn main() {
         .route("/components/registration", get(register_form))
         .route("/components/login", get(login_form))
         .route("/components/hero", get(hero))
-        .route("/components/queue_table", get(queue_table))
+        .route("/components/queue_table/:username", get(queue_table))
+        .route(
+            "/components/queue_user_table/:username",
+            get({
+                move |path| queue_user_panel(path)
+            })
+        )
         // Endpoints
         .route("/api/register", post(register))
         .route("/api/login", post(login))
+        .route("/api/join_queue", post(join_queue))
+        .route("/api/leave_queue", post(leave_queue))
         .layer(cors)
         .with_state(state.clone());
 

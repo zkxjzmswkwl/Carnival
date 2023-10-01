@@ -14,6 +14,20 @@ pub async fn add_user_to_queue(
     ).execute(pool).await
 }
 
+pub async fn delete_user_from_queue(
+    queue_id: i32,
+    user_id: i32,
+    pool: &SqlitePool
+) {
+
+    sqlx::query_file!(
+        "sql/delete_queued_player.sql", queue_id, user_id
+    )
+    .execute(pool)
+    .await
+    .map_err(|err| eprintln!("{err}"));
+}
+
 #[derive(Default, Debug)]
 pub struct ResolvedQueuePlayer {
     pub role: String,

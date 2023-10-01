@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
-
 use easy_password::bcrypt::{hash_password, verify_password};
+use headers::Cookie;
 use sqlx::{SqlitePool, sqlite::SqliteQueryResult};
 use crate::db::models::SessionToken;
 use rand::Rng;
@@ -111,4 +111,16 @@ pub async fn validate(
         }
     }
     None
+}
+
+pub fn token_from_cookies(
+    cookies: &Cookie
+) -> Option<String> {
+
+    let session_option = cookies.get("session_id");
+    if session_option.is_none() {
+        return None;
+    }
+    let token = &session_option.unwrap()["Bearer ".len()..].to_string();
+    Some(token.to_string())
 }
