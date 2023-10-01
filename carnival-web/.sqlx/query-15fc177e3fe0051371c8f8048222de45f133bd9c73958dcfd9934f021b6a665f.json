@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT\r\n    *\r\nFROM\r\n    overwatch_match_players\r\nWHERE\r\n    match_id = ?\r\n    AND team_id = ?;",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "user_id",
+        "ordinal": 1,
+        "type_info": "Int64"
+      },
+      {
+        "name": "match_id",
+        "ordinal": 2,
+        "type_info": "Int64"
+      },
+      {
+        "name": "team_id",
+        "ordinal": 3,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "15fc177e3fe0051371c8f8048222de45f133bd9c73958dcfd9934f021b6a665f"
+}
