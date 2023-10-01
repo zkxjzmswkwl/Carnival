@@ -21,6 +21,19 @@ use crate::db::services::session_token as session;
 
 use super::payloads::{JoinQueueInput, LeaveQueueInput};
 
+
+async fn validate_session_cookie(
+    user_id: i32,
+    connection: &SocketAddr,
+    state: &CarnyState,
+) -> bool {
+
+    match session::validate(&connection, user_id, &state.pool).await {
+        Some(_) => return true,
+        None    => return false
+    }
+}
+
 pub async fn register(
     State(state): State<CarnyState>,
     Json(post_data): Json<RegisterInput>
@@ -57,7 +70,7 @@ pub async fn register(
             let redirect_js = fs::read_to_string("js/redirect_register.js")
                 .unwrap_or("User created. Error redirecting.".to_string());
 
-            (StatusCode::OK, format!("<script>{}</script>", redirect_js))
+            (StatusCode::CREATED, format!("<script>{}</script>", redirect_js))
         },
         Err(e) => {
             eprintln!("{e}");
@@ -144,6 +157,7 @@ pub async fn login(
 }
 
 pub async fn join_queue(
+    ConnectInfo(connection): ConnectInfo<SocketAddr>,
     TypedHeader(cookies): TypedHeader<Cookie>,
     State(state): State<CarnyState>,
     Json(post_data): Json<JoinQueueInput>
@@ -151,6 +165,12 @@ pub async fn join_queue(
 
     let queue_id_i32: i32 = post_data.queue_id.parse().unwrap_or_default();
     if let Some(requesting_user) = user::from_cookies(&cookies, &state.pool).await {
+
+        if !validate_session_cookie(requesting_user.id, &connection, &state).await {
+            return (StatusCode::NOT_ACCEPTABLE,
+                    "Detected some funky stuff. Token invalidated.".to_string());
+        }
+
         if queue::add_user_to_queue(
             queue_id_i32,
             requesting_user.id,
@@ -162,11 +182,12 @@ pub async fn join_queue(
             return (StatusCode::CREATED, build_queue_comp(&cookies, &state.pool).await);
         }
     }
-    (StatusCode::OK, "asidjasid".to_string())
+    (StatusCode::OK, "Error joining queue.".to_string())
 }
 
 #[axum_macros::debug_handler]
 pub async fn leave_queue(
+    ConnectInfo(connection): ConnectInfo<SocketAddr>,
     TypedHeader(cookies): TypedHeader<Cookie>,
     State(state): State<CarnyState>,
     Json(post_data): Json<LeaveQueueInput>
@@ -178,6 +199,12 @@ pub async fn leave_queue(
     // You're welcome 😎
     let queue_id_i32: i32 = post_data.queue_id.parse().unwrap_or_default();
     if let Some(requesting_user) = user::from_cookies(&cookies, &state.pool).await {
+
+        if !validate_session_cookie(requesting_user.id, &connection, &state).await {
+            return (StatusCode::NOT_ACCEPTABLE,
+                    "Detected some funky stuff. Token invalidated.".to_string());
+        }
+
         queue::delete_user_from_queue(
             queue_id_i32,
             requesting_user.id,
