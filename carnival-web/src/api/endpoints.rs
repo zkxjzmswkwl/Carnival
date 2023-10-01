@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, str::FromStr, fs};
+use std::{net::SocketAddr, fs};
 
 use easy_password::bcrypt::verify_password;
 use headers::Cookie;
@@ -10,12 +10,12 @@ use axum::{
     TypedHeader,
     Json
 };
-use http::{StatusCode, HeaderValue, HeaderName};
+use http::{StatusCode, HeaderValue};
 use crate::{
     api::payloads::{RegisterInput, LoginInput},
     CarnyState,
     db::services::{user, queue},
-    HMAC_KEY, rendering::components::{queue_table, build_queue_comp}
+    HMAC_KEY, rendering::components::build_queue_comp
 };
 use crate::db::services::session_token as session;
 
