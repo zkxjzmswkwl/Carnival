@@ -26,6 +26,7 @@ fn main() -> Result<()> {
     let mut cursor_pos = POINT { x: 0, y: 0 };
     let mut state = CursorState::default();
 
+
     loop {
         // Check if the trigger key is pressed and try to get the cursor position.
         if unsafe { GetAsyncKeyState(TRIGGER_KEY) & 1 } != 0
@@ -36,7 +37,7 @@ fn main() -> Result<()> {
             println!("{{ x = {}, y = {}, delay = {}}},", state.x, state.y, DELAY.as_millis());
         }
 
-        // Sleep for a defined delay to limit CPU usage.
+        // Sleep for a defined delay to limit CPU usage..
         sleep(DELAY);
     }
 }
