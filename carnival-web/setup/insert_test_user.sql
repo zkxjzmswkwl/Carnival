@@ -1,4 +1,4 @@
 INSERT INTO
-  users (username, password, battletag)
+    users (username, password, battletag, role)
 VALUES
-  ("EvilToaster", "orisa", "EvilToaster#6969");
+    ('test123', 'orisa', 'a#123', 'Tank');

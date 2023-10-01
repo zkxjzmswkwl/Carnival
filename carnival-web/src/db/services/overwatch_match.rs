@@ -1,9 +1,8 @@
 use sqlx::{SqlitePool, sqlite::SqliteQueryResult};
 
-use crate::db::models::{OverwatchMatch, OverwatchMatchPlayer, User};
+use crate::db::models::{OverwatchMatch, OverwatchMatchPlayer};
 
-use super::user;
-
+#[allow(dead_code)]
 pub async fn create_map(
     map_name: &str,
     map_mode: &str,
@@ -18,6 +17,7 @@ pub async fn create_map(
         .await
 }
 
+#[allow(dead_code)]
 pub async fn create_match(
     map_id: i32,
     blue_team: &Vec<i32>,
@@ -77,6 +77,7 @@ pub async fn get_match_by_id(
     ).bind(id).fetch_one(pool).await
 }
 
+#[allow(dead_code)]
 pub async fn get_match_players(
     match_id: i32,
     pool: &SqlitePool
@@ -132,6 +133,7 @@ impl ResolvedTeams {
     }
 }
 
+#[allow(dead_code)]
 pub async fn get_team(
     match_id: i32,
     team_id: u8,
@@ -154,6 +156,7 @@ pub struct ResolvedOverwatchMatch {
 }
 
 impl ResolvedOverwatchMatch {
+    #[allow(dead_code)]
     pub async fn from_id(ow_match_id: i32, pool: &SqlitePool) -> Self {
         let overwatch_match = get_match_by_id(ow_match_id, pool).await.unwrap_or_else(|err| {
             eprintln!("{err}");

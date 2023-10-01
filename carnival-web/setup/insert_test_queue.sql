@@ -1,1 +1,1 @@
-INSERT INTO queues (title, demogrphic) VALUES ("Dev", "shittas");
+INSERT INTO queues (title, demogrphic) VALUES ('Dev', 'shittas');

@@ -1,14 +1,12 @@
 use sqlx::{SqlitePool, sqlite::SqliteQueryResult};
 
-use crate::db::models::{User, QueuedPlayer};
-
 pub async fn is_queued(
     queue_id: i32,
     username: &str,
     pool: &SqlitePool
 ) -> bool {
 
-    let query = sqlx::query_file!("sql/is_queued.sql", username).fetch_all(pool).await;
+    let query = sqlx::query_file!("sql/is_queued.sql", username, queue_id).fetch_all(pool).await;
     query.map(|x| !x.is_empty()).unwrap_or_default()
 }
 
