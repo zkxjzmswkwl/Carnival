@@ -78,6 +78,7 @@ class RegisterMismatchedPasswords(Test):
     def test(self) -> Response:
         payload = {
             "username": "realuserwow",
+            "role": "Tank",
             "password": "123123",
             "password_conf": "1123123",
             "battletag": "realuser#12333"
@@ -93,7 +94,8 @@ class BattletagExists(Test):
 
     def test(self) -> Response:
         payload = {
-            "username": "cartertest",
+            "username": str(uuid.uuid1).replace("-", "")[0:40],
+            "role": "Tank",
             "password": "123123",
             "password_conf": "123123",
             "battletag": "Fuey500#123"
@@ -108,27 +110,32 @@ class Login(Test):
 
     def test(self) -> Response:
         payload = {
-            "username": "cartertest",
-            "password": "123123",
+            "username": "testaccount",
+            "password": "123",
         }
         return post_get_response(endpoint="api/login", json_payload=payload)
 
 
 class Register(Test):
     def __init__(self):
-        super().__init__("Register", Response(200, None))
+        super().__init__("Register", Response(201, None))
 
     def test(self) -> Response:
         payload = {
-            "username": str(uuid.uuid1).replace("-", "")[0:10],
-            "battletag": str(uuid.uuid1).replace("-", "")[0:10],
-            "password": "123123",
-            "password_conf": "123123",
+            "username": str(uuid.uuid1).replace("-", "")[0:40],
+            "role": "Tank",
+            "battletag": str(uuid.uuid1).replace("-", "")[0:40],
+            "password": "123",
+            "password_conf": "123",
         }
         return post_get_response(endpoint="api/register", json_payload=payload)
 
 
 def test_users():
+    register = Register()
+    register_resp = register.test()
+    register.check(register_resp)
+
     login = Login()
     login_resp = login.test()
     login.check(login_resp)
@@ -136,10 +143,6 @@ def test_users():
     not_exist = UserNotExist()
     not_exist_resp = not_exist.test()
     not_exist.check(not_exist_resp)
-
-    register = Register()
-    register_resp = register.test()
-    register.check(register_resp)
 
     reg_mismatched_pw = RegisterMismatchedPasswords()
     reg_mismatched_pw_resp = reg_mismatched_pw.test()
