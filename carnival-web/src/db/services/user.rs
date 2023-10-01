@@ -1,8 +1,11 @@
 use anyhow::Result;
 use easy_password::bcrypt::hash_password;
+use headers::Cookie;
 use sqlx::{SqlitePool, sqlite::SqliteQueryResult, Sqlite};
 
 use crate::{HMAC_KEY, db::models::User};
+
+use super::session_token::token_from_cookies;
 
 
 pub async fn user_by_username(
@@ -113,4 +116,28 @@ pub async fn from_vec_ids(
     sqlx::query_as::<_, User>(
         &format!("SELECT * FROM users WHERE id IN {}", sql_id_list)[..]
     ).fetch_all(pool).await
+}
+
+pub async fn user_by_token(
+    token: &str,
+    pool: &SqlitePool
+) -> Option<User> {
+
+    // TODO: See if sqlx supports optional struct members (password, remote_addr).
+    let user_result = sqlx::query_file_as_unchecked!(User, "sql/user_by_token.sql", token)
+        .fetch_one(pool)
+        .await;
+    if let Ok(result) = user_result {
+        return Some(result);
+    }
+    return None;
+}
+
+pub async fn from_cookies(cookies: &Cookie, pool: &SqlitePool) -> Option<User> {
+    if let Some(token) = token_from_cookies(cookies) {
+        if let Some(user) = user_by_token(&token, pool).await {
+            return Some(user);
+        } 
+    }
+    return None;
 }

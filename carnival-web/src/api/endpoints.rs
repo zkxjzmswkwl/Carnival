@@ -1,18 +1,24 @@
-use std::net::SocketAddr;
+use std::{net::SocketAddr, str::FromStr};
 
 use easy_password::bcrypt::verify_password;
+use headers::Cookie;
 use static_str_ops::static_format;
 use axum::{
     extract::{State, ConnectInfo},
-    Json, response::Response, body::{Full, Bytes}
+    response::Response,
+    body::{Full, Bytes},
+    TypedHeader,
+    Json
 };
-use http::{StatusCode, HeaderValue};
+use http::{StatusCode, HeaderValue, HeaderName};
 use crate::{
     api::payloads::{RegisterInput, LoginInput},
     CarnyState,
-    db::services::user::{self}, HMAC_KEY
+    db::services::{user, queue, session_token::{token_from_cookies}}, HMAC_KEY
 };
 use crate::db::services::session_token as session;
+
+use super::payloads::{JoinQueueInput, LeaveQueueInput};
 
 pub async fn register(
     State(state): State<CarnyState>,
@@ -102,8 +108,8 @@ pub async fn login(
                 *r.status_mut() = StatusCode::OK;
                 *r.body_mut() = Full::from("Nice");
                 r.headers_mut().insert(
-                    "set-cookie",
-                    HeaderValue::from_str(static_format!("session={}", session)).unwrap()
+                    "set-Cookie",
+                    HeaderValue::from_str(static_format!("session_id=Bearer {};path=/;", session)).unwrap()
                 );
             },
             // If it has, we get very upset and tell the client that their actions are
@@ -120,4 +126,46 @@ pub async fn login(
     *r.status_mut() = StatusCode::BAD_REQUEST;
     *r.body_mut() = Full::from("Incorrect username or password");
     r
+}
+
+pub async fn join_queue(
+    TypedHeader(cookies): TypedHeader<Cookie>,
+    State(state): State<CarnyState>,
+    Json(post_data): Json<JoinQueueInput>
+) -> (StatusCode, String) {
+
+    if let Some(requesting_user) = user::from_cookies(&cookies, &state.pool).await {
+        if queue::add_user_to_queue(
+            post_data.queue_id,
+            requesting_user.id,
+            &post_data.role, 
+            &state.pool
+        ).await.is_ok() {
+            // ? - I don't want to go through shit and make everything (StatusCode, Option<String>)
+            // but maybe it's worth it? idk. don't want to. 🐒
+            return (StatusCode::CREATED, "".to_string());
+        }
+    }
+    (StatusCode::OK, "asidjasid".to_string())
+}
+
+#[axum_macros::debug_handler]
+pub async fn leave_queue(
+    TypedHeader(cookies): TypedHeader<Cookie>,
+    State(state): State<CarnyState>,
+    Json(post_data): Json<LeaveQueueInput>
+) -> (StatusCode, String) {
+
+    // This has no error handling.
+    // All that can be used to determine if something's gone wrong
+    // here, is the fact that `queue::delete_user_from_queue` calls `eprintln!`.
+    // You're welcome 😎
+    if let Some(requesting_user) = user::from_cookies(&cookies, &state.pool).await {
+        queue::delete_user_from_queue(
+            post_data.queue_id,
+            requesting_user.id,
+            &state.pool
+        ).await
+    }
+    (StatusCode::OK, "".to_string())
 }

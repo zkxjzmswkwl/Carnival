@@ -1,3 +1,7 @@
+use axum::extract::{Path, State};
+
+use crate::{db::models::User, CarnyState};
+
 /*--------------------------------------------------
  * Javascript
 --------------------------------------------------*/
@@ -132,7 +136,7 @@ pub async fn base() -> String {
                 <ul class="menu menu-horizontal px-1">
                   <li><a>Leaderboard</a></li>
                   <!-- TODO: Implement an isAuthed check, display Play, Settings if authed. If not, display Register, Login -->
-                  <li><a>Play</a></li>
+                  <li><a href="/queue">Play</a></li>
                   <!-- <li><a href="/register">Register</a></li> -->
                   <!-- <li><a href="/login">Login</a></li> -->
                   <li><a>Settings</a></li>
@@ -153,20 +157,15 @@ pub async fn base() -> String {
 }
 
 /// Serves purely static data atm. Will finish when I wake up - Carter
-pub async fn queue_table() -> &'static str {
+pub async fn queue_table(Path(username): Path<String>) -> String {
   r###"
       <div class="cotainer p-4 bg-base-200 ovrflow-x-auto mx-auto w-1/2 mt-4">
           <div clas="flex flex-col mb-2">
               <!-- Queue title, changes for each queue -->
               <div class="text-3xl font-bold text-[#ddd] mb-2">Queue</div>
               <!-- User information (Username, avatar, win/loss, rating, %, etc.) -->
-              <div class="flex flex-row justify-between mb-2">
-                  <div class="text-lg text-[#ddd] mb-2 pl-1 pt-[8px]">Carter</div>
-                  <button class="btn btn-sm bg-[#1a8cd8] text-white w-1/6">
-                      <span class="loading loading-infinity loading-md"></span>
-                      Queued
-                  </button>
-              </div>
+              <div id="queue-user-panel">Loading</div>
+              <div hx-get="http://localhost:3000/components/queue_user_table/[username]" hx-trigger="load" hx-target="#queue-user-panel""></div>
           </div>
 
           <table class="table">
@@ -194,7 +193,19 @@ pub async fn queue_table() -> &'static str {
               </thead>
           </table>
       </div>
-  </div>"###
+  </div>"###.replace("[username]", &username)
 }
 
-
+pub async fn queue_user_panel(
+  Path(username): Path<String>
+) -> String {
+  r###"
+  <div class="flex flex-row justify-between mb-2">
+      <div class="text-lg text-[#ddd] mb-2 pl-1 pt-[8px]">[username]</div>
+      <button class="btn btn-sm bg-[#1a8cd8] text-white w-1/6">
+          <span class="loading loading-infinity loading-md"></span>
+          Queued
+      </button>
+  </div>
+  "###.replace("[username]", username.as_str())
+}
