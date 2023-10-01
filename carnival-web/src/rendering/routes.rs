@@ -37,19 +37,22 @@ pub async fn leaderboard_route() -> Html<String> {
     )
 }
 
+#[axum_macros::debug_handler]
 pub async fn queue_route(
     TypedHeader(cookies): TypedHeader<Cookie>,
     State(state): State<CarnyState>,
 ) -> Html<String> {
-    // let requesting_user = user_by_token(authorization.token(), &state.pool).await.unwrap();
-    // let html_insertion = r###"
-    //     <div hx-get="http://localhost:3000/components/queue_table/[username]" hx-trigger="load" hx-target="#app""></div>
-    //     "###
-    //     .replace("[username]", &requesting_user.username);
+    let requesting_user = user::from_cookies(&cookies, &state.pool).await.unwrap();
+    let html_insertion = r###"
+        <div hx-get="http://localhost:3000/components/queue_table/[username]" hx-trigger="load" hx-target="#app""></div>
+        "###
+        .replace("[username]", &requesting_user.username);
 
     Html(base().await.replace(
             "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            "asiodjasidajsid"))
+            &html_insertion
+        )
+    )
 }
 
 /// NOT IMPLEMENTED

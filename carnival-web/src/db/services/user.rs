@@ -118,7 +118,7 @@ pub async fn from_vec_ids(
     ).fetch_all(pool).await
 }
 
-pub async fn user_by_token(
+pub async fn by_token(
     token: &str,
     pool: &SqlitePool
 ) -> Option<User> {
@@ -135,7 +135,7 @@ pub async fn user_by_token(
 
 pub async fn from_cookies(cookies: &Cookie, pool: &SqlitePool) -> Option<User> {
     if let Some(token) = token_from_cookies(cookies) {
-        if let Some(user) = user_by_token(&token, pool).await {
+        if let Some(user) = by_token(&token, pool).await {
             return Some(user);
         } 
     }
