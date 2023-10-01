@@ -17,7 +17,6 @@ use api::endpoints::{
 };
 use sqlx::{SqlitePool, Sqlite, migrate::MigrateDatabase};
 use crate::db::queries::tables;
-use crate::db::services::overwatch_match::ResolvedOverwatchMatch;
 
 mod db;
 mod api;
@@ -26,6 +25,7 @@ mod rendering;
 
 const HMAC_KEY: &[u8] = dotenv!("HMAC_KEY").as_bytes();
 const DATABASE_URL: &str = dotenv!("DATABASE_URL");
+const DOMAIN: &str = dotenv!("DOMAIN");
 
 #[derive(Clone)]
 pub struct CarnyState {
@@ -97,7 +97,7 @@ async fn main() {
         .route("/components/registration", get(register_form))
         .route("/components/login", get(login_form))
         .route("/components/hero", get(hero))
-        .route("/components/queue_table/:username", get(queue_table))
+        .route("/components/queue_table", get(queue_table))
         .route("/components/queue_user_table/:username", get(queue_user_panel))
         // Endpoints
         .route("/api/register", post(register))
