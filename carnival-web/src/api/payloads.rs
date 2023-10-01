@@ -3,6 +3,7 @@ use serde::Deserialize;
 #[derive(Deserialize)]
 pub struct RegisterInput {
     pub username: String,
+    pub role: String,
     pub password: String,
     pub password_conf: String,
     pub battletag: String
@@ -14,10 +15,10 @@ pub struct LoginInput {
     pub password: String
 }
 
+// See LeaveQueueInput comment.
 #[derive(Deserialize, Debug)]
 pub struct JoinQueueInput {
     pub queue_id: String,
-    pub role: String
 }
 
 // Feels wrong so it probably is.
