@@ -1,6 +1,6 @@
 {
     "keyboard_action_demo": [
-      {"KeyboardAction": {"keycode": "f", "delay": 69 } },
+      {"KeyboardAction": {"input": "carter#6969", "delay": 69 } },
       { "MouseAction": { "x": 69, "y": 69, "delay": 69 } }
     ],
     "custom_lobby" : [
