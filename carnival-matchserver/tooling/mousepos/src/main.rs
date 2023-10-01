@@ -15,7 +15,7 @@ struct CursorState {
 }
 
 impl CursorState {
-    /// Update cursor coordinates.
+    /// Update cursor coordinates..
     fn update(&mut self, new_pos: POINT) {
         self.x = new_pos.x;
         self.y = new_pos.y;
