@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO\r\n    users (username, password, battletag)\r\nVALUES\r\n    (?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "9aa12a0bc0f4f2a941834da6019fda6de92d2b00e3e4b981cd1664493e683736"
+}

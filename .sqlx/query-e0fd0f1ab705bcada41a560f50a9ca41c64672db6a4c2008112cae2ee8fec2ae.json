@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO\r\n    queued_players (queue_id, user_id, role)\r\nVALUES\r\n    (?, ?, ?);",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "e0fd0f1ab705bcada41a560f50a9ca41c64672db6a4c2008112cae2ee8fec2ae"
+}
