@@ -18,8 +18,9 @@ pub struct SessionToken {
 pub struct User {
     pub id: i32,
     pub username: String,
-    pub password: String,
+    pub role: String,
     pub battletag: String,
+    pub password: String,
 }
 
 #[allow(dead_code)]

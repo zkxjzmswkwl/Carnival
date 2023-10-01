@@ -39,12 +39,11 @@ fn queue_button(is_queued: bool) -> String {
     false => {
       r###"
         <input type="hidden" name="queue_id" value="1" />
-        <input type="hidden" name="role" value="DPS" />
         <button
             class="btn btn-md bg-[#1a8cd8] text-white md:w-25 lg:w-60 overflow-auto"
             hx-post="/api/join_queue"
             hx-ext="json-enc"
-            hx-include="[name='queue_id'], [name='role']"
+            hx-include="[name='queue_id']"
             hx-target="#app">
 
           <!-- Not in queue -->
@@ -108,6 +107,12 @@ pub async fn register_form() -> String {
       <form hx-post="{}/api/register" hx-ext="json-enc" class="join join-vertical w-full">
         <input name="username" type="text" placeholder="Username" class="input input-bordered rounded-lg mb-2 w-full">
         <input name="battletag" type="text" placeholder="Battletag (Case sensitive)" class="input input-bordered rounded-lg mb-2 w-full">
+        <select name="role" class="select select-bordered w-full max-w-xs mb-2">
+          <option disabled selected>Role</option>
+          <option>Tank</option>
+          <option>DPS</option>
+          <option>Support</option>
+        </select>
         <input name="password" type="password" placeholder="Password" class="input input-bordered rounded-lg mb-2 w-full">
         <input name="password_conf" type="password" placeholder="Password confirmation" class="input input-bordered rounded-lg mb-2 w-full">
         <button class="btn btn-wide bg-[#1a8cd8] text-white w-full">Register</button>

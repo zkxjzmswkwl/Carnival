@@ -14,7 +14,8 @@ use http::{StatusCode, HeaderValue, HeaderName};
 use crate::{
     api::payloads::{RegisterInput, LoginInput},
     CarnyState,
-    db::services::{user, queue, session_token::{token_from_cookies}}, HMAC_KEY, rendering::components::{queue_table, build_queue_comp}
+    db::services::{user, queue},
+    HMAC_KEY, rendering::components::{queue_table, build_queue_comp}
 };
 use crate::db::services::session_token as session;
 
@@ -26,10 +27,15 @@ pub async fn register(
 )-> (StatusCode, String) {
 
     // NOTE(aalhendi): is this needed?
-    let username: &str = &post_data.username;
-    let password: &str = &post_data.password;
+    let username:      &str = &post_data.username;
+    let battletag:     &str = &post_data.battletag;
+    let role:          &str = &post_data.role;
+    let password:      &str = &post_data.password;
     let password_conf: &str = &post_data.password_conf;
-    let battletag: &str = &post_data.battletag;
+
+    if !vec!["Tank", "DPS", "Support"].iter().any(|x| role.contains(x)) {
+        return (StatusCode::BAD_REQUEST, "Role does not exist".to_string());
+    }
 
     if password != password_conf {
         return (StatusCode::BAD_REQUEST,
@@ -45,7 +51,7 @@ pub async fn register(
                 "Username already exists".to_string());
     }
 
-    match user::create_user(username, password, battletag, &state.pool).await {
+    match user::create_user(username, password, battletag, role, &state.pool).await {
         Ok(_) => (StatusCode::OK, "Created".to_string()),
         Err(e) => {
             eprintln!("{e}");
@@ -139,7 +145,7 @@ pub async fn join_queue(
         if queue::add_user_to_queue(
             queue_id_i32,
             requesting_user.id,
-            &post_data.role, 
+            &requesting_user.role, 
             &state.pool
         ).await.is_ok() {
             // ? - I don't want to go through shit and make everything (StatusCode, Option<String>)
