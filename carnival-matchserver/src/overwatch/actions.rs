@@ -35,7 +35,7 @@ struct MouseAction {
 }
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]
 struct KeyboardAction {
-    keycode: String,
+    input: String,
     delay: u64,
 }
 
@@ -49,7 +49,7 @@ impl Action for MouseAction {
 impl Action for KeyboardAction { 
     fn invoke(&self) {
         log::debug!("Invoking KeyboardAction: \n {self:#?}");
-        winput::send_str(&self.keycode);
+        winput::send_str(&self.input);
         thread::sleep(time::Duration::from_millis(self.delay));
     }
 }
