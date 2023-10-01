@@ -1,5 +1,5 @@
 use crate::config::Config;
-use overwatch::{actions::Actions, state_handler::StateHandler};
+use overwatch::state_handler::StateHandler;
 use tracing_subscriber::filter::LevelFilter;
 
 mod config;
@@ -28,8 +28,8 @@ fn main() -> Result<()> {
     let config = Config::load();
     println!("{config:#?}");
 
-    let mut action_chains = Actions::default();
-    action_chains.load();
+    let mut action_chains = overwatch::actions::ActionChain::default();
+    action_chains.load().unwrap();
     action_chains
         .invoke_chain("custom_lobby")
         .invoke_chain("move_self_spec")

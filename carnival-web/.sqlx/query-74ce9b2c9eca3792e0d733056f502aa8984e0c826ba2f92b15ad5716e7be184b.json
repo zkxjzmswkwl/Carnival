@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT\r\n    users.id,\r\n    users.username,\r\n    users.battletag,\r\n    users.password\r\nFROM\r\n    session_tokens\r\n    INNER JOIN users ON session_tokens.for_user = users.id\r\nWHERE\r\n    token = ?;\r\n",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "username",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "battletag",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "password",
+        "ordinal": 3,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "74ce9b2c9eca3792e0d733056f502aa8984e0c826ba2f92b15ad5716e7be184b"
+}

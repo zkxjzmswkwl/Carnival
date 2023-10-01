@@ -1,10 +1,13 @@
-use axum::response::Html;
+use axum::{response::Html, extract::State, TypedHeader};
+use headers::Cookie;
+
+use crate::{CarnyState, db::services::user, DOMAIN};
 use super::components::base;
 
 pub async fn index() -> Html<String> {
     Html(base().await.replace(
             "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            r###"<div hx-get="http://localhost:3000/components/hero" hx-trigger="load" hx-target="#app""></div>"###,
+            &format!(r###"<div hx-get="{}/components/hero" hx-trigger="load" hx-target="#app""></div>"###, DOMAIN),
         )
     )
 }
@@ -12,7 +15,7 @@ pub async fn index() -> Html<String> {
 pub async fn login_route() -> Html<String> {
     Html(base().await.replace(
             "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            r###"<div hx-get="http://localhost:3000/components/login" hx-trigger="load" hx-target="#app""></div>"###
+            &format!(r###"<div hx-get="{}/components/login" hx-trigger="load" hx-target="#app""></div>"###, DOMAIN),
         )
     )
 }
@@ -20,7 +23,7 @@ pub async fn login_route() -> Html<String> {
 pub async fn register_route() -> Html<String> {
     Html(base().await.replace(
             "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            r###"<div hx-get="http://localhost:3000/components/registration" hx-trigger="load" hx-target="#app""></div>"###
+            &format!(r###"<div hx-get="{}/components/registration" hx-trigger="load" hx-target="#app""></div>"###, DOMAIN),
         )
     )
 }
@@ -29,16 +32,16 @@ pub async fn register_route() -> Html<String> {
 pub async fn leaderboard_route() -> Html<String> {
     Html(base().await.replace(
             "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            r###"<div hx-get="http://localhost:3000/components/leaderboard" hx-trigger="load" hx-target="#app""></div>"###
+            &format!(r###"<div hx-get="{}/components/leaderboard" hx-trigger="load" hx-target="#app""></div>"###, DOMAIN)
         )
     )
 }
 
-/// NOT IMPLEMENTED
+#[axum_macros::debug_handler]
 pub async fn queue_route() -> Html<String> {
     Html(base().await.replace(
             "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            r###"<div hx-get="http://localhost:3000/components/queue_table" hx-trigger="load" hx-target="#app""></div>"###
+            &format!(r###"<div hx-get="{}/components/queue_table" hx-trigger="load" hx-target="#app""></div>"###, DOMAIN),
         )
     )
 }
@@ -47,7 +50,7 @@ pub async fn queue_route() -> Html<String> {
 pub async fn profile_route() -> Html<String> {
     Html(base().await.replace(
             "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            r###"<div hx-get="http://localhost:3000/components/profile" hx-trigger="load" hx-target="#app""></div>"###
+            &format!(r###"<div hx-get="{}/components/profile" hx-trigger="load" hx-target="#app""></div>"###, DOMAIN),
         )
     )
 }

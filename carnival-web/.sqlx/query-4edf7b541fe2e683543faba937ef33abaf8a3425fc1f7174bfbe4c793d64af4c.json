@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "select\r\n    users.username\r\nfrom\r\n    queued_players\r\ninner join users on queued_players.user_id = users.id\r\nwhere\r\n    users.username = ?;",
+  "describe": {
+    "columns": [
+      {
+        "name": "username",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "4edf7b541fe2e683543faba937ef33abaf8a3425fc1f7174bfbe4c793d64af4c"
+}

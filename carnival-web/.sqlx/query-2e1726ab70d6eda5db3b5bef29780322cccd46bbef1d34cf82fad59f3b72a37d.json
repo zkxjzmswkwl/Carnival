@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM\r\n    queued_players\r\nWHERE\r\n    queue_id = ?\r\n    AND user_id = ?;",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "2e1726ab70d6eda5db3b5bef29780322cccd46bbef1d34cf82fad59f3b72a37d"
+}

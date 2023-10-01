@@ -1,6 +1,62 @@
+use axum::{extract::{Path, State}, TypedHeader};
+use headers::Cookie;
+use sqlx::SqlitePool;
+
+use crate::{db::services::user, db::services::queue::{ResolvedQueue, is_queued}, CarnyState, DOMAIN};
+
+mod utils {
+  pub fn queue_table_row(username: &str, role: &str) -> String {
+    format!(r###"
+      <tr>
+          <td>{}</td>
+          <td>{}</td>
+      </tr>
+    "###, username, role)
+  }
+}
+
 /*--------------------------------------------------
  * Javascript
 --------------------------------------------------*/
+fn queue_button(is_queued: bool) -> String {
+  match is_queued {
+    true  => {
+      r###"
+        <input type="hidden" id="queue_id" name="queue_id" value="1" />
+        <button 
+          class="btn btn-md bg-[#1a8cd8] text-white md:w-25 lg:w-60 overflow-auto"
+          hx-post="/api/leave_queue"
+          hx-ext="json-enc"
+          hx-include="[name='queue_id']"
+          hx-target="#app">
+        
+
+          <span class="loading loading-infinity loading-md"></span>
+          <div>Leave Queue</div>
+        </button>
+      "###.to_string()
+    },
+    false => {
+      r###"
+        <input type="hidden" name="queue_id" value="1" />
+        <button
+            class="btn btn-md bg-[#1a8cd8] text-white md:w-25 lg:w-60 overflow-auto"
+            hx-post="/api/join_queue"
+            hx-ext="json-enc"
+            hx-include="[name='queue_id']"
+            hx-target="#app">
+
+          <!-- Not in queue -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
+            <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+          </svg>
+          <div>Join Queue</div>
+        </button>
+      "###.to_string()
+    }
+  }
+}
+
 pub fn animated_header(header_text: String) -> String {
     r###"
     <script>
@@ -46,33 +102,38 @@ pub async fn hero() -> &'static str {
 
 pub async fn register_form() -> String {
     let js = animated_header("Register".to_string());
-    r###"<div class="container mt-4 mx-auto w-1/4 bg-base-200 p-6 rounded-lg">
+    format!(r###"<div class="container mt-4 mx-auto w-1/4 bg-base-200 p-6 rounded-lg">
       <div class="mb-3"><span id="animated-header" class="text-2xl text-white font-bold"></span></div>
-      <form hx-post="http://localhost:3000/api/register" hx-ext="json-enc" class="join join-vertical w-full">
+      <form hx-post="{}/api/register" hx-ext="json-enc" class="join join-vertical w-full">
         <input name="username" type="text" placeholder="Username" class="input input-bordered rounded-lg mb-2 w-full">
         <input name="battletag" type="text" placeholder="Battletag (Case sensitive)" class="input input-bordered rounded-lg mb-2 w-full">
+        <select name="role" class="select select-bordered w-full max-w-xs mb-2">
+          <option disabled selected>Role</option>
+          <option>Tank</option>
+          <option>DPS</option>
+          <option>Support</option>
+        </select>
         <input name="password" type="password" placeholder="Password" class="input input-bordered rounded-lg mb-2 w-full">
         <input name="password_conf" type="password" placeholder="Password confirmation" class="input input-bordered rounded-lg mb-2 w-full">
         <button class="btn btn-wide bg-[#1a8cd8] text-white w-full">Register</button>
       </form>
     </div>
-    ^.^"###.replace("^.^", &js)
+    {}"###, DOMAIN, js)
 }
 
 pub async fn login_form() -> String {
     let js = animated_header("Login".to_string());
-    r###"
+    format!(r###"
     <div class="container mt-4 mx-auto w-1/4 bg-base-200 p-6 rounded-lg">
       <div class="mb-3"><span id="animated-header" class="text-2xl text-white font-bold"></span></div>
-      <form hx-post="http://localhost:3000/api/login" hx-ext="json-enc" class="join join-vertical w-full">
+      <form hx-post="{}/api/login" hx-ext="json-enc" class="join join-vertical w-full">
         <input name="username" type="text" placeholder="Username" class="input input-bordered rounded-lg mb-2 w-full">
         <input name="password" type="password" placeholder="Password" class="input input-bordered rounded-lg mb-2 w-full">
         <button class="btn btn-wide bg-[#1a8cd8] text-white w-full">Login</button>
       </form>
     </div>
-    ^.^
-    "###.replace("^.^", &js)
-
+    {},
+    "###, DOMAIN, js)
 }
 
 pub async fn base() -> String {
@@ -121,7 +182,7 @@ pub async fn base() -> String {
           <body>
 
             <!-- HEADER START -->
-            <div class="navbar bg-base-200">
+            <div class="navbar bg-base-300">
               <!-- Lefthand side -->
               <div class="navbar-start">
                 <a class="btn btn-ghost normal-case text-xl">Carnival</a>
@@ -132,7 +193,7 @@ pub async fn base() -> String {
                 <ul class="menu menu-horizontal px-1">
                   <li><a>Leaderboard</a></li>
                   <!-- TODO: Implement an isAuthed check, display Play, Settings if authed. If not, display Register, Login -->
-                  <li><a>Play</a></li>
+                  <li><a href="/queue">Play</a></li>
                   <!-- <li><a href="/register">Register</a></li> -->
                   <!-- <li><a href="/login">Login</a></li> -->
                   <li><a>Settings</a></li>
@@ -152,21 +213,45 @@ pub async fn base() -> String {
     "###.to_string()
 }
 
-/// Serves purely static data atm. Will finish when I wake up - Carter
-pub async fn queue_table() -> &'static str {
-  r###"
+pub async fn build_queue_comp(
+  cookies: &Cookie,
+  pool: &SqlitePool
+) -> String {
+
+  // Only care about one queue for now
+  let resolved_user = user::from_cookies(&cookies, pool).await;
+  if resolved_user.is_none() {
+    return "Couldn't be authenticated".to_string();
+  }
+
+  let resolved_queue = ResolvedQueue::from_id(1, pool).await;
+  let mut tank_rows = String::new();
+  let mut dps_rows = String::new();
+  let mut support_rows = String::new();
+
+  for tank in resolved_queue.tanks.iter() {
+    tank_rows.push_str(&utils::queue_table_row(&tank.username, &tank.role));
+  }
+  for dps in resolved_queue.dps.iter() {
+    dps_rows.push_str(&utils::queue_table_row(&dps.username, &dps.role));
+  }
+  for support in resolved_queue.supports.iter() {
+    support_rows.push_str(&utils::queue_table_row(&support.username, &support.role));
+  }
+
+  println!("{:#?}\n{:#?}\n{:#?}", tank_rows, dps_rows, support_rows);
+
+  let js = animated_header("Queue".to_string());
+  format!(
+    r###"{}
       <div class="cotainer p-4 bg-base-200 ovrflow-x-auto mx-auto w-1/2 mt-4">
           <div clas="flex flex-col mb-2">
               <!-- Queue title, changes for each queue -->
-              <div class="text-3xl font-bold text-[#ddd] mb-2">Queue</div>
+              <div class="mb-3"><span id="animated-header" class="text-3xl text-white font-bold"></span></div>
+              
               <!-- User information (Username, avatar, win/loss, rating, %, etc.) -->
-              <div class="flex flex-row justify-between mb-2">
-                  <div class="text-lg text-[#ddd] mb-2 pl-1 pt-[8px]">Carter</div>
-                  <button class="btn btn-sm bg-[#1a8cd8] text-white w-1/6">
-                      <span class="loading loading-infinity loading-md"></span>
-                      Queued
-                  </button>
-              </div>
+              <div id="queue-user-panel">Loading</div>
+              <div hx-get="{}/components/queue_user_table/{}" hx-trigger="load" hx-target="#queue-user-panel""></div>
           </div>
 
           <table class="table">
@@ -177,24 +262,45 @@ pub async fn queue_table() -> &'static str {
                   </tr>
                   </thead>
                   <tbody>
-                      <tr>
-                          <td>Test123</td>
-                          <td>Tank</td>
-                      </tr>
-                      <!-- Set bg-base-200 and border-l-4 for only the current user's table row (if they're in queue) -->
-                      <tr class="bg-base-300 border-l-4 border-l-[#1a8cd8]">
-                          <td>Carter</td>
-                          <td>DPS</td>
-                      </tr>
-                      <tr>
-                          <td>09231uj0ewid</td>
-                          <td>Support</td>
-                      </tr>
+                          <!-- Tanks -->
+                          {}
+                          <!-- Dps -->
+                          {}
+                          <!-- Supports -->
+                          {}
                   </tbody>
               </thead>
           </table>
       </div>
-  </div>"###
+  </div>"###,
+    js,
+    DOMAIN,
+    resolved_user.unwrap().username,
+    tank_rows,
+    dps_rows,
+    support_rows
+  )
 }
 
+/// Serves purely static data atm. Will finish when I wake up - Carter
+pub async fn queue_table(
+  State(state): State<CarnyState>,
+  TypedHeader(cookies): TypedHeader<Cookie>
+) -> String {
+  build_queue_comp(&cookies, &state.pool).await
+}
 
+pub async fn queue_user_panel(
+  Path(username): Path<String>,
+  State(state): State<CarnyState>
+) -> String {
+
+  format!(r###"
+  <div class="flex flex-row justify-between mb-2">
+      <div class="text-lg text-[#ddd] mb-2 pl-1 pt-[8px]">{}</div>
+      {}
+  </div>
+  "###,
+  &username,
+  queue_button(is_queued(1, &username, &state.pool).await)) 
+}
