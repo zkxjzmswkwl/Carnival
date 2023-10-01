@@ -1,6 +1,6 @@
 use std::{thread, time};
 
-use winput::{Button, Mouse};
+use winput::{Button, Mouse, Input, Action};
 
 pub fn click(x: i32, y: i32) {
     if Mouse::set_position(x, y).is_ok() {
