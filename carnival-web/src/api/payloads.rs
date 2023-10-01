@@ -16,7 +16,7 @@ pub struct LoginInput {
 
 #[derive(Deserialize, Debug)]
 pub struct JoinQueueInput {
-    pub queue_id: i32,
+    pub queue_id: String,
     pub role: String
 }
 
@@ -27,5 +27,5 @@ pub struct JoinQueueInput {
 // No idea.
 #[derive(Deserialize, Debug)]
 pub struct LeaveQueueInput {
-    pub queue_id: i32,
+    pub queue_id: String,
 }

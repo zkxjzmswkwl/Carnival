@@ -14,7 +14,7 @@ use http::{StatusCode, HeaderValue, HeaderName};
 use crate::{
     api::payloads::{RegisterInput, LoginInput},
     CarnyState,
-    db::services::{user, queue, session_token::{token_from_cookies}}, HMAC_KEY
+    db::services::{user, queue, session_token::{token_from_cookies}}, HMAC_KEY, rendering::components::{queue_table, build_queue_comp}
 };
 use crate::db::services::session_token as session;
 
@@ -134,16 +134,17 @@ pub async fn join_queue(
     Json(post_data): Json<JoinQueueInput>
 ) -> (StatusCode, String) {
 
+    let queue_id_i32: i32 = post_data.queue_id.parse().unwrap_or_default();
     if let Some(requesting_user) = user::from_cookies(&cookies, &state.pool).await {
         if queue::add_user_to_queue(
-            post_data.queue_id,
+            queue_id_i32,
             requesting_user.id,
             &post_data.role, 
             &state.pool
         ).await.is_ok() {
             // ? - I don't want to go through shit and make everything (StatusCode, Option<String>)
             // but maybe it's worth it? idk. don't want to. 🐒
-            return (StatusCode::CREATED, "".to_string());
+            return (StatusCode::CREATED, build_queue_comp(&cookies, &state.pool).await);
         }
     }
     (StatusCode::OK, "asidjasid".to_string())
@@ -160,12 +161,14 @@ pub async fn leave_queue(
     // All that can be used to determine if something's gone wrong
     // here, is the fact that `queue::delete_user_from_queue` calls `eprintln!`.
     // You're welcome 😎
+    let queue_id_i32: i32 = post_data.queue_id.parse().unwrap_or_default();
     if let Some(requesting_user) = user::from_cookies(&cookies, &state.pool).await {
         queue::delete_user_from_queue(
-            post_data.queue_id,
+            queue_id_i32,
             requesting_user.id,
             &state.pool
-        ).await
+        ).await;
+        return (StatusCode::OK, build_queue_comp(&cookies, &state.pool).await);
     }
-    (StatusCode::OK, "".to_string())
+    (StatusCode::OK, "Uhoh".to_string())
 }
