@@ -1,5 +1,5 @@
 use crate::config::Config;
-use overwatch::{state_handler::StateHandler};
+use overwatch::state_handler::StateHandler;
 use tracing_subscriber::filter::LevelFilter;
 
 mod config;
@@ -12,7 +12,6 @@ fn main() -> Result<()> {
     if cfg!(debug_assertions) {
         log_level = LevelFilter::TRACE;
     }
-
 
     color_eyre::install()?;
     tracing_subscriber::fmt()
