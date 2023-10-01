@@ -20,7 +20,7 @@ pub async fn add_user_to_queue(
 ) -> Result<SqliteQueryResult, sqlx::Error> {
 
     sqlx::query_file!(
-        "sql/insert_queued_player.sql"queue_id, queue_id, user_id, role
+        "sql/insert_queued_player.sql", queue_id, user_id, role
     ).execute(pool).await
 }
 

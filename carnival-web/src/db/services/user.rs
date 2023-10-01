@@ -83,11 +83,12 @@ pub async fn create_user(
     username: &str,
     password: &str,
     battletag: &str,
+    role: &str,
     pool: &SqlitePool
 ) -> Result<SqliteQueryResult, sqlx::Error> {
 
     let hashed_pass = hash_password(password, HMAC_KEY, 12).unwrap();
-    sqlx::query_file!("sql/insert_user.sql", username, hashed_pass, battletag)
+    sqlx::query_file!("sql/insert_user.sql", username, hashed_pass, battletag, role)
         .execute(pool)
         .await
 }
