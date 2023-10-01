@@ -15,7 +15,7 @@ struct CursorState {
 }
 
 impl CursorState {
-    /// Update cursor coordinates.
+    /// Update cursor coordinates..
     fn update(&mut self, new_pos: POINT) {
         self.x = new_pos.x;
         self.y = new_pos.y;
@@ -25,6 +25,7 @@ impl CursorState {
 fn main() -> Result<()> {
     let mut cursor_pos = POINT { x: 0, y: 0 };
     let mut state = CursorState::default();
+
 
     loop {
         // Check if the trigger key is pressed and try to get the cursor position.
@@ -36,7 +37,7 @@ fn main() -> Result<()> {
             println!("{{ x = {}, y = {}, delay = {}}},", state.x, state.y, DELAY.as_millis());
         }
 
-        // Sleep for a defined delay to limit CPU usage.
+        // Sleep for a defined delay to limit CPU usage..
         sleep(DELAY);
     }
 }

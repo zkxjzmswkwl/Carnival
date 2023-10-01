@@ -1,14 +1,17 @@
 use std::{net::SocketAddr, fs};
 
-use easy_password::bcrypt::verify_password;
-use headers::Cookie;
-use static_str_ops::static_format;
+use crate::db::services::session_token as session;
+use crate::{
+    api::payloads::{LoginInput, RegisterInput},
+    db::services::{queue, session_token::token_from_cookies, user},
+    rendering::components::{build_queue_comp, queue_table},
+    CarnyState, HMAC_KEY,
+};
 use axum::{
-    extract::{State, ConnectInfo},
+    body::{Bytes, Full},
+    extract::{ConnectInfo, State},
     response::Response,
-    body::{Full, Bytes},
-    TypedHeader,
-    Json
+    Json, TypedHeader,
 };
 use http::{StatusCode, HeaderValue};
 use crate::{
@@ -18,6 +21,7 @@ use crate::{
     HMAC_KEY, rendering::components::build_queue_comp
 };
 use crate::db::services::session_token as session;
+
 
 use super::payloads::{JoinQueueInput, LeaveQueueInput};
 
@@ -36,9 +40,8 @@ async fn validate_session_cookie(
 
 pub async fn register(
     State(state): State<CarnyState>,
-    Json(post_data): Json<RegisterInput>
-)-> (StatusCode, String) {
-
+    Json(post_data): Json<RegisterInput>,
+) -> (StatusCode, String) {
     // NOTE(aalhendi): is this needed?
     let username:      &str = &post_data.username;
     let battletag:     &str = &post_data.battletag;
@@ -51,17 +54,24 @@ pub async fn register(
     }
 
     if password != password_conf {
-        return (StatusCode::BAD_REQUEST,
-                "Passwords do not match".to_string());
+        return (
+            StatusCode::BAD_REQUEST,
+            "Passwords do not match".to_string(),
+        );
     }
 
     if user::does_battletag_exist(battletag, &state.pool).await {
-        return (StatusCode::BAD_REQUEST, "Battletag already exists".to_string())
+        return (
+            StatusCode::BAD_REQUEST,
+            "Battletag already exists".to_string(),
+        );
     }
 
     if user::does_username_exist(username, &state.pool).await {
-        return (StatusCode::BAD_REQUEST,
-                "Username already exists".to_string());
+        return (
+            StatusCode::BAD_REQUEST,
+            "Username already exists".to_string(),
+        );
     }
 
     match user::create_user(username, password, battletag, role, &state.pool).await {
@@ -74,8 +84,10 @@ pub async fn register(
         },
         Err(e) => {
             eprintln!("{e}");
-            (StatusCode::INTERNAL_SERVER_ERROR,
-                    "Error creating user.".to_string())
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Error creating user.".to_string(),
+            )
         }
     }
 }
@@ -84,9 +96,8 @@ pub async fn register(
 pub async fn login(
     ConnectInfo(connection): ConnectInfo<SocketAddr>,
     State(state): State<CarnyState>,
-    Json(post_data): Json<LoginInput>
+    Json(post_data): Json<LoginInput>,
 ) -> Response<Full<Bytes>> {
-
     let mut r: Response<Full<Bytes>> = Response::new(Full::from("nil"));
 
     let username: &str = &post_data.username;
@@ -96,7 +107,7 @@ pub async fn login(
     let user = match user_result {
         Ok(unwrapped_user) => unwrapped_user,
         // If there is no user by the username posted to us, error out.
-        Err(_) =>  {
+        Err(_) => {
             *r.status_mut() = StatusCode::BAD_REQUEST;
             *r.body_mut() = Full::from("User does not exist");
             return r;
@@ -105,8 +116,11 @@ pub async fn login(
 
     if verify_password(password, &user.password, HMAC_KEY).unwrap() {
         // checks to see if the requesting user has a valid token already.
-        let needs_token = session::token_by_user_id(user.id, &state.pool).await.is_none();
-        // If they don't, create one. 
+
+        let needs_token = session::token_by_user_id(user.id, &state.pool)
+            .await
+            .is_none();
+        // If they don't, create one.
         if needs_token {
             let session_option = session::create(&connection, user.id, &state.pool).await;
             // This would suck.
@@ -123,7 +137,7 @@ pub async fn login(
         //      If someone knows a user's password, they know their password.
         //      They will still be assigned a token (as of now).
         //
-        //      This *should* be tossed into middleware of some kind and then 
+        //      This *should* be tossed into middleware of some kind and then
         //      invoked prior to execution on any endpoint route that is denoted
         //      to require authorization.
         //
@@ -137,9 +151,10 @@ pub async fn login(
                     format!("<script>{}</script>", redirect_js));
                 r.headers_mut().insert(
                     "set-Cookie",
-                    HeaderValue::from_str(static_format!("session_id=Bearer {};path=/;", session)).unwrap()
+                    HeaderValue::from_str(static_format!("session_id=Bearer {};path=/;", session))
+                        .unwrap(),
                 );
-            },
+            }
             // If it has, we get very upset and tell the client that their actions are
             // "NOT_ACCEPTABLE".
             None => {
@@ -149,7 +164,7 @@ pub async fn login(
         }
         return r;
     }
-  
+
     // If we haven't dipped yet then this is the only remaining possibility.
     *r.status_mut() = StatusCode::BAD_REQUEST;
     *r.body_mut() = Full::from("Incorrect username or password");
@@ -160,9 +175,8 @@ pub async fn join_queue(
     ConnectInfo(connection): ConnectInfo<SocketAddr>,
     TypedHeader(cookies): TypedHeader<Cookie>,
     State(state): State<CarnyState>,
-    Json(post_data): Json<JoinQueueInput>
+    Json(post_data): Json<JoinQueueInput>,
 ) -> (StatusCode, String) {
-
     let queue_id_i32: i32 = post_data.queue_id.parse().unwrap_or_default();
     if let Some(requesting_user) = user::from_cookies(&cookies, &state.pool).await {
 
@@ -179,7 +193,10 @@ pub async fn join_queue(
         ).await.is_ok() {
             // ? - I don't want to go through shit and make everything (StatusCode, Option<String>)
             // but maybe it's worth it? idk. don't want to. 🐒
-            return (StatusCode::CREATED, build_queue_comp(&cookies, &state.pool).await);
+            return (
+                StatusCode::CREATED,
+                build_queue_comp(&cookies, &state.pool).await,
+            );
         }
     }
     (StatusCode::OK, "Error joining queue.".to_string())
@@ -190,16 +207,14 @@ pub async fn leave_queue(
     ConnectInfo(connection): ConnectInfo<SocketAddr>,
     TypedHeader(cookies): TypedHeader<Cookie>,
     State(state): State<CarnyState>,
-    Json(post_data): Json<LeaveQueueInput>
+    Json(post_data): Json<LeaveQueueInput>,
 ) -> (StatusCode, String) {
-
     // This has no error handling.
     // All that can be used to determine if something's gone wrong
     // here, is the fact that `queue::delete_user_from_queue` calls `eprintln!`.
     // You're welcome 😎
     let queue_id_i32: i32 = post_data.queue_id.parse().unwrap_or_default();
     if let Some(requesting_user) = user::from_cookies(&cookies, &state.pool).await {
-
         if !validate_session_cookie(requesting_user.id, &connection, &state).await {
             return (StatusCode::NOT_ACCEPTABLE,
                     "Detected some funky stuff. Token invalidated.".to_string());
