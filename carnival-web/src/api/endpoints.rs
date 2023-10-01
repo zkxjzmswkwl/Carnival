@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, str::FromStr};
+use std::{net::SocketAddr, str::FromStr, fs};
 
 use easy_password::bcrypt::verify_password;
 use headers::Cookie;
@@ -52,7 +52,13 @@ pub async fn register(
     }
 
     match user::create_user(username, password, battletag, role, &state.pool).await {
-        Ok(_) => (StatusCode::OK, "Created".to_string()),
+
+        Ok(_) => {
+            let redirect_js = fs::read_to_string("js/redirect_register.js")
+                .unwrap_or("User created. Error redirecting.".to_string());
+
+            (StatusCode::OK, format!("<script>{}</script>", redirect_js))
+        },
         Err(e) => {
             eprintln!("{e}");
             (StatusCode::INTERNAL_SERVER_ERROR,
@@ -111,8 +117,11 @@ pub async fn login(
         match session::validate(&connection, user.id, &state.pool).await {
             // If it hasn't, cool. Set the cookie and be done with it.
             Some(session) => {
+                let redirect_js = fs::read_to_string("js/redirect_login.js")
+                    .unwrap_or("User created. Error redirecting.".to_string());
                 *r.status_mut() = StatusCode::OK;
-                *r.body_mut() = Full::from("Nice");
+                *r.body_mut() = Full::from(
+                    format!("<script>{}</script>", redirect_js));
                 r.headers_mut().insert(
                     "set-Cookie",
                     HeaderValue::from_str(static_format!("session_id=Bearer {};path=/;", session)).unwrap()
