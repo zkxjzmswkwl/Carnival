@@ -72,6 +72,7 @@ pub async fn token_by_user_id(user_id: i32, pool: &SqlitePool) -> Option<Session
     None
 }
 
+#[allow(dead_code)]
 pub async fn delete_by_user_id(
     user_id: i32,
     pool: &SqlitePool,

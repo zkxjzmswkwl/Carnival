@@ -1,6 +1,7 @@
 pub mod tables {
     pub const CREATE_USERS: &str = "CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY UNIQUE NOT NULL,
+        role VARCHAR(30) NOT NULL,
         username VARCHAR(250) UNIQUE NOT NULL,
         password VARCHAR(250) NOT NULL,
         battletag VARCHAR(17) UNIQUE NOT NULL);";

@@ -3,8 +3,8 @@ use std::{net::SocketAddr, fs};
 use crate::db::services::session_token as session;
 use crate::{
     api::payloads::{LoginInput, RegisterInput},
-    db::services::{queue, session_token::token_from_cookies, user},
-    rendering::components::{build_queue_comp, queue_table},
+    db::services::{queue, user},
+    rendering::components::build_queue_comp,
     CarnyState, HMAC_KEY,
 };
 use axum::{
@@ -13,14 +13,10 @@ use axum::{
     response::Response,
     Json, TypedHeader,
 };
+use easy_password::bcrypt::verify_password;
+use headers::Cookie;
 use http::{StatusCode, HeaderValue};
-use crate::{
-    api::payloads::{RegisterInput, LoginInput},
-    CarnyState,
-    db::services::{user, queue},
-    HMAC_KEY, rendering::components::build_queue_comp
-};
-use crate::db::services::session_token as session;
+use static_str_ops::static_format;
 
 
 use super::payloads::{JoinQueueInput, LeaveQueueInput};
