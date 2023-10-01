@@ -407,6 +407,7 @@ dependencies = [
  "obws",
  "rusty-tesseract",
  "serde",
+ "serde_json",
  "system-extensions",
  "tokio",
  "toml 0.8.1",
