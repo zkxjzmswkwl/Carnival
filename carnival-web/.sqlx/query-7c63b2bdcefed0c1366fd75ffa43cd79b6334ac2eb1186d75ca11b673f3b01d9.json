@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "select\r\n    queued_players.role,\r\n    users.username\r\nFROM\r\n    (\r\n        queued_players\r\n        INNER JOIN users ON queued_players.user_id = users.id\r\n    )\r\nWHERE\r\n    queue_id = ?;",
+  "describe": {
+    "columns": [
+      {
+        "name": "role",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "username",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "7c63b2bdcefed0c1366fd75ffa43cd79b6334ac2eb1186d75ca11b673f3b01d9"
+}

@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT\r\n    users.username\r\nFROM\r\n    overwatch_match_players\r\n    INNER JOIN users on overwatch_match_players.user_id = users.id\r\nWHERE\r\n    match_id = ?\r\n    AND team_id = ?;",
+  "describe": {
+    "columns": [
+      {
+        "name": "username",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "92ccf3b9db8578be6343a96f205b1d7c386f2c8dfdc3f662a465fa223931d6d3"
+}
