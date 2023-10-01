@@ -1,6 +1,17 @@
 use axum::extract::{Path, State};
 
-use crate::{db::models::User, CarnyState};
+use crate::{db::models::User, db::services::queue::{ResolvedQueue, ResolvedQueuePlayer}, CarnyState};
+
+mod utils {
+  pub fn queue_table_row(username: &str, role: &str) -> String {
+    format!(r###"
+      <tr>
+          <td>{}</td>
+          <td>{}</td>
+      </tr>
+    "###, username, role)
+  }
+}
 
 /*--------------------------------------------------
  * Javascript
@@ -157,15 +168,35 @@ pub async fn base() -> String {
 }
 
 /// Serves purely static data atm. Will finish when I wake up - Carter
-pub async fn queue_table(Path(username): Path<String>) -> String {
-  r###"
+pub async fn queue_table(
+  Path(username): Path<String>,
+  State(state): State<CarnyState>
+) -> String {
+  // Only care about one queue for now
+  let resolved_queue = ResolvedQueue::from_id(1, &state.pool).await;
+  let mut tank_rows = String::new();
+  let mut dps_rows = String::new();
+  let mut support_rows = String::new();
+
+  for tank in resolved_queue.tanks.iter() {
+    tank_rows.push_str(&utils::queue_table_row(&tank.username, &tank.role));
+  }
+  for dps in resolved_queue.dps.iter() {
+    dps_rows.push_str(&utils::queue_table_row(&dps.username, &dps.role));
+  }
+  for support in resolved_queue.supports.iter() {
+    support_rows.push_str(&utils::queue_table_row(&support.username, &support.role));
+  }
+
+  format!(
+    r###"
       <div class="cotainer p-4 bg-base-200 ovrflow-x-auto mx-auto w-1/2 mt-4">
           <div clas="flex flex-col mb-2">
               <!-- Queue title, changes for each queue -->
               <div class="text-3xl font-bold text-[#ddd] mb-2">Queue</div>
               <!-- User information (Username, avatar, win/loss, rating, %, etc.) -->
               <div id="queue-user-panel">Loading</div>
-              <div hx-get="http://localhost:3000/components/queue_user_table/[username]" hx-trigger="load" hx-target="#queue-user-panel""></div>
+              <div hx-get="http://localhost:3000/components/queue_user_table/{}" hx-trigger="load" hx-target="#queue-user-panel""></div>
           </div>
 
           <table class="table">
@@ -176,24 +207,18 @@ pub async fn queue_table(Path(username): Path<String>) -> String {
                   </tr>
                   </thead>
                   <tbody>
-                      <tr>
-                          <td>Test123</td>
-                          <td>Tank</td>
-                      </tr>
-                      <!-- Set bg-base-200 and border-l-4 for only the current user's table row (if they're in queue) -->
-                      <tr class="bg-base-300 border-l-4 border-l-[#1a8cd8]">
-                          <td>Carter</td>
-                          <td>DPS</td>
-                      </tr>
-                      <tr>
-                          <td>09231uj0ewid</td>
-                          <td>Support</td>
-                      </tr>
+                  <!-- Tanks -->
+                  {}
+                  <!-- Dps -->
+                  {}
+                  <!-- Supports -->
+                  {}
                   </tbody>
               </thead>
           </table>
       </div>
-  </div>"###.replace("[username]", &username)
+  </div>
+  "###, username, tank_rows, dps_rows, support_rows)
 }
 
 pub async fn queue_user_panel(
