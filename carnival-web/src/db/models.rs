@@ -18,6 +18,9 @@ pub struct User {
     pub username: String,
     pub role: String,
     pub battletag: String,
+    pub rating: i32,
+    pub wins: i32,
+    pub losses: i32,
     pub password: String,
 }
 
@@ -34,6 +37,8 @@ pub struct OverwatchMap {
 pub struct OverwatchMatch {
     pub id: i32,
     pub map_id: i32,
+    pub winner: u8,
+    pub completed: bool
 }
 
 #[allow(dead_code)]
