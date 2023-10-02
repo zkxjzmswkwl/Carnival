@@ -1,0 +1,71 @@
+<html>
+  <head>
+    <title>Carnival</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <!-- HTMX json-enc extension -->
+    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+    <!-- DaisyUI (Tailwind components etc) -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.8.1/dist/full.css" rel="stylesheet" type="text/css" />
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Poppins font import -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Devicons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/devicons/devicon@v2.15.1/devicon.min.css">
+    <!-- Anime.js (not weeb shit, animations) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/2.0.2/anime.min.js"></script>
+
+    <!-- I'm not sure it even matters if we shove this into its own file or not. Like, sure, it's not being minified. But do we fucking care? Honestly? -->
+    <style>
+      body {
+        font-family: "Poppins"
+      }
+      .svg-in-button {
+        fill: #fff !important;
+      }
+      #animated-header {
+        background-image: linear-gradient(transparent calc(97% - 1px), #1a8cd8 2px);
+        background-size: 0;
+        background-repeat: no-repeat;
+        display: infinite;
+      }
+      #animated-header .letter {
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- HEADER START -->
+    <div class="navbar bg-base-300">
+      <!-- Lefthand side -->
+      <div class="navbar-start">
+        <a href="/" class="btn btn-ghost normal-case text-xl">Carnival</a>
+      </div>
+
+      <!-- Center -->
+      <div class="navbar-center">
+        <ul class="menu menu-horizontal px-1">
+          header_items_
+        </ul>
+      </div>
+
+      <!-- Righthand side -->
+      <div class="navbar-end">
+        <img class="w-10 rounded-full" src="https://i.imgur.com/RfOQHPc.png" />
+      </div>
+    </div>
+    <!-- HEADER END   -->
+    <div id="app">
+        <div class="flex h-screen">
+            <span class="m-auto loading loading-bars loading-lg"></span>
+        </div>
+    </div>
+    https://www.youtube.com/watch?v=dQw4w9WgXcQ
+  </body>
+</html>

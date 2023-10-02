@@ -1,0 +1,31 @@
+table_domino_js_
+animated_header_
+      <div class="cotainer p-4 bg-base-200 ovrflow-x-auto mx-auto w-1/2 mt-4">
+          <div clas="flex flex-col mb-2">
+              <!-- Queue title, changes for each queue -->
+              <div class="mb-3"><span id="animated-header" class="text-3xl text-white font-bold"></span></div>
+              
+              <!-- User information (Username, avatar, win/loss, rating, %, etc.) -->
+              <div id="queue-user-panel">Loading</div>
+              <div hx-get="domain_/components/queue_user_table/_username_" hx-trigger="load" hx-target="#queue-user-panel""></div>
+          </div>
+
+          <table class="table">
+              <thead class="bg-base-300">
+                  <tr class="boder-bottom border-[#1a8cd8]">
+                      <th class="text-lg">Player</th>
+                      <th class="text-lg">Role</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                          <!-- Tanks -->
+                          tank_rows_
+                          <!-- Dps -->
+                          dps_rows_
+                          <!-- Supports -->
+                          support_rows_
+                  </tbody>
+              </thead>
+          </table>
+      </div>
+  </div>
