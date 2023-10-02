@@ -1,5 +1,7 @@
 use sqlx::{SqlitePool, sqlite::SqliteQueryResult};
 
+use crate::db::{models::OverwatchMatch, services::overwatch_match::{ResolvedTeams, create_match}};
+
 pub async fn is_queued(
     queue_id: i32,
     username: &str,
@@ -23,8 +25,8 @@ pub async fn add_user_to_queue(
 }
 
 pub async fn delete_user_from_queue(
-    queue_id: i32,
-    user_id: i32,
+    queue_id: &i32,
+    user_id: &i32,
     pool: &SqlitePool
 ) {
 
@@ -38,8 +40,10 @@ pub async fn delete_user_from_queue(
 
 #[derive(Default, Debug)]
 pub struct ResolvedQueuePlayer {
-    pub role: String,
-    pub username: String
+    pub username: String,
+    // User id
+    pub id: i32,
+    pub role: String
 }
 
 pub async fn players_in_queue(
@@ -47,7 +51,11 @@ pub async fn players_in_queue(
     pool: &SqlitePool
 ) -> Option<Vec<ResolvedQueuePlayer>> {
 
-    let result = sqlx::query_file_as!(
+    // query_file_as_unchecked! is required here
+    // due to a bug in sqlx that has not been fixed in over 2 years.
+    // NOTE: This does not disable compile-time query validation,
+    // only type checking. Fuck sqlx.
+    let result = sqlx::query_file_as_unchecked!(
         ResolvedQueuePlayer, "sql/resolve_queue.sql", queue_id
     ).fetch_all(pool).await;
 
@@ -90,4 +98,68 @@ impl ResolvedQueue {
         }
         return ret;
     }
+}
+
+pub async fn pop_queue(
+    queue_id: i32,
+    pool: &SqlitePool
+) -> Option<i32> {
+
+    async fn constraints_satisfied(queue: &ResolvedQueue) -> bool {
+        println!("{}, {}, {}", queue.tanks.len(), queue.dps.len(), queue.supports.len());
+        queue.tanks.len()    >= 2 &&
+        queue.dps.len()      >= 4 &&
+        queue.supports.len() >= 4
+    }
+
+    // NOTE: This currently does not take into account any sort of MMR.
+    // It assigns players to blue/red team in order that they queued (for their role).
+    fn assign_teams(queue: &ResolvedQueue) -> (Vec<i32>, Vec<i32>) {
+        // Blue team
+        let mut blue: Vec<i32> = vec![];
+        // 1 Tank
+        blue.push(queue.tanks[0].id);
+        // 2 DPS
+        for dps_player in queue.dps[0..2].iter() {
+            blue.push(dps_player.id);
+        }
+        // 2 Supports
+        for support_player in queue.supports[0..2].iter() {
+            blue.push(support_player.id);
+        }
+
+        // Red team
+        let mut red: Vec<i32> = vec![];
+        // 1 Tank
+        red.push(queue.tanks[1].id);
+        // 2 DPS
+        for dps_player in queue.dps[2..4].iter() {
+            red.push(dps_player.id);
+        }
+        // 2 Supports
+        for support_player in queue.supports[2..4].iter() {
+            red.push(support_player.id);
+        }
+
+        (blue, red)
+    }
+
+    let queue = ResolvedQueue::from_id(queue_id, pool).await;
+    // Ensure that enough players to fill a match are queued.
+    // LOL
+    if constraints_satisfied(&queue).await {
+        println!("Constraints satisfied, queue pop.");
+        let teams = assign_teams(&queue);
+        println!("assign_teams return\n{:#?}", teams);
+        // TODO: Map selection
+        let insertion_result = create_match(1, &teams.0, &teams.1, pool).await;
+        match insertion_result {
+            Ok(created_match) => return Some(created_match),
+            Err(e) => {
+                eprintln!("{e}");
+                return None;
+            }
+        }
+    }
+    None
 }

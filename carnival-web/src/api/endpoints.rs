@@ -1,5 +1,6 @@
 use std::{net::SocketAddr, fs};
 
+use crate::db::services::queue::pop_queue;
 use crate::db::services::session_token as session;
 use crate::{
     api::payloads::{LoginInput, RegisterInput},
@@ -39,6 +40,8 @@ pub async fn register(
     Json(post_data): Json<RegisterInput>,
 ) -> (StatusCode, String) {
     // NOTE(aalhendi): is this needed?
+    // NOTE(Carter): It's for clarity - putting 40 bytes on the stack
+    // doesn't matter.
     let username:      &str = &post_data.username;
     let battletag:     &str = &post_data.battletag;
     let role:          &str = &post_data.role;
@@ -140,15 +143,14 @@ pub async fn login(
         match session::validate(&connection, user.id, &state.pool).await {
             // If it hasn't, cool. Set the cookie and be done with it.
             Some(session) => {
-                let redirect_js = fs::read_to_string("js/redirect_login.js")
-                    .unwrap_or("User created. Error redirecting.".to_string());
+                let redirect_js = fs::read_to_string("js/redirect_login.js").unwrap_or("User created. Error redirecting.".to_string());
+
                 *r.status_mut() = StatusCode::OK;
-                *r.body_mut() = Full::from(
-                    format!("<script>{}</script>", redirect_js));
+                *r.body_mut() = Full::from(format!("<script>{}</script>", redirect_js));
+
                 r.headers_mut().insert(
-                    "set-Cookie",
-                    HeaderValue::from_str(static_format!("session_id=Bearer {};path=/;", session))
-                        .unwrap(),
+                    "Set-Cookie",
+                    HeaderValue::from_str(static_format!("session_id=Bearer {};path=/;", session)).unwrap(),
                 );
             }
             // If it has, we get very upset and tell the client that their actions are
@@ -173,6 +175,7 @@ pub async fn join_queue(
     State(state): State<CarnyState>,
     Json(post_data): Json<JoinQueueInput>,
 ) -> (StatusCode, String) {
+
     let queue_id_i32: i32 = post_data.queue_id.parse().unwrap_or_default();
     if let Some(requesting_user) = user::from_cookies(&cookies, &state.pool).await {
 
@@ -187,6 +190,12 @@ pub async fn join_queue(
             &requesting_user.role, 
             &state.pool
         ).await.is_ok() {
+            let new_match_option = pop_queue(queue_id_i32, &state.pool).await;
+            if new_match_option.is_none() {
+                println!("Queue did not pop");
+                // Send websocket message to all users in the game
+                // return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to pop queue.".to_string());
+            }
             // ? - I don't want to go through shit and make everything (StatusCode, Option<String>)
             // but maybe it's worth it? idk. don't want to. 🐒
             return (
@@ -205,7 +214,8 @@ pub async fn leave_queue(
     State(state): State<CarnyState>,
     Json(post_data): Json<LeaveQueueInput>,
 ) -> (StatusCode, String) {
-    // This has no error handling.
+
+    // TODO: This has no error handling.
     // All that can be used to determine if something's gone wrong
     // here, is the fact that `queue::delete_user_from_queue` calls `eprintln!`.
     // You're welcome 😎
@@ -217,8 +227,8 @@ pub async fn leave_queue(
         }
 
         queue::delete_user_from_queue(
-            queue_id_i32,
-            requesting_user.id,
+            &queue_id_i32,
+            &requesting_user.id,
             &state.pool
         ).await;
         return (StatusCode::OK, build_queue_comp(&cookies, &state.pool).await);
