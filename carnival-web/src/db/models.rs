@@ -1,6 +1,4 @@
-use sqlx::{SqlitePool, FromRow};
-
-use super::services::{overwatch_match::{get_team, get_match_by_id}, user};
+use sqlx::FromRow;
 
 #[allow(dead_code)]
 #[derive(sqlx::FromRow, Debug)]
@@ -49,6 +47,7 @@ pub struct OverwatchMatchPlayer {
     pub team_id: u8
 }
 
+#[allow(dead_code)]
 pub struct Queue {
     pub id: i32,
     pub title: String,

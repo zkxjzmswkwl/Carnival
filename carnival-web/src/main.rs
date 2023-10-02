@@ -42,9 +42,6 @@ impl CarnyState {
         let pool = SqlitePool::connect(DATABASE_URL).await.unwrap();
         // Probably move these to create_tables or something at some point.
         let create_user_table_result = sqlx::query(tables::CREATE_USERS).execute(&pool).await.unwrap();
-
-        // Probably move these to create_tables or something at some point.
-        let create_user_table_result = sqlx::query(&tables::CREATE_USERS).execute(&pool).await.unwrap();
         println!("User table creation -> {:?}", create_user_table_result);
 
         let create_session_result = sqlx::query(tables::CREATE_SESSION_TOKENS).execute(&pool).await.unwrap();

@@ -239,8 +239,6 @@ pub async fn build_queue_comp(
     support_rows.push_str(&utils::queue_table_row(&support.username, &support.role));
   }
 
-  println!("{:#?}\n{:#?}\n{:#?}", tank_rows, dps_rows, support_rows);
-
   let js = animated_header("Queue".to_string());
   format!(
     r###"{}

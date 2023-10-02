@@ -1,7 +1,5 @@
-use axum::{response::Html, extract::State, TypedHeader};
-use headers::Cookie;
-
-use crate::{CarnyState, db::services::user, DOMAIN};
+use axum::response::Html;
+use crate::DOMAIN;
 use super::components::base;
 
 pub async fn index() -> Html<String> {

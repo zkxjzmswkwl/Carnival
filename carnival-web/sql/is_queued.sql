@@ -4,4 +4,6 @@ from
     queued_players
 inner join users on queued_players.user_id = users.id
 where
-    users.username = ?;
+    users.username = ?
+    and
+    queued_players.queue_id = ?;

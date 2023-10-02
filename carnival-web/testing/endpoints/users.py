@@ -63,7 +63,7 @@ class UserNotExist(Test):
 
     def test(self) -> Response:
         payload = {
-            "username": str(uuid.uuid1).replace("-", "")[0:10],
+            "username": str(uuid.uuid1()).replace("-", "")[0:10],
             "password": "123123123"
         }
         return post_get_response(endpoint="api/login",
@@ -93,8 +93,18 @@ class BattletagExists(Test):
                          Response(400, "Battletag already exists"))
 
     def test(self) -> Response:
+        create_payload = {
+            "username": str(uuid.uuid1()).replace("-", "")[0:40],
+            "role": "Tank",
+            "battletag": "Fuey500#123",
+            "password": "123",
+            "password_conf": "123",
+        }
+        post_get_response(endpoint="api/register",
+                          json_payload=create_payload)
+
         payload = {
-            "username": str(uuid.uuid1).replace("-", "")[0:40],
+            "username": str(uuid.uuid1()).replace("-", "")[0:40],
             "role": "Tank",
             "password": "123123",
             "password_conf": "123123",
@@ -122,9 +132,9 @@ class Register(Test):
 
     def test(self) -> Response:
         payload = {
-            "username": str(uuid.uuid1).replace("-", "")[0:40],
+            "username": str(uuid.uuid1()).replace("-", "")[0:40],
             "role": "Tank",
-            "battletag": str(uuid.uuid1).replace("-", "")[0:40],
+            "battletag": str(uuid.uuid1()).replace("-", "")[0:40],
             "password": "123",
             "password_conf": "123",
         }
