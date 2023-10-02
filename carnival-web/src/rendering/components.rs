@@ -50,7 +50,10 @@ mod utils {
     pub fn generate_table_row(values: &[&str]) -> String {
         let mut ret = "<tr>".to_string();
         for val in values {
-            ret.push_str(&format!("<td class=\"row opacity-0\">{}</td>", val));
+            ret.push_str(&format!(
+                "<td class=\"row opacity-0\"><a href=\"/@{}\">{}</a></td>",
+                val, val
+            ));
         }
         ret.push_str("</tr>");
         return ret;
@@ -233,6 +236,30 @@ pub async fn queue_user_panel(
         "html/queue_user_panel.html",
         &[
             ("_username_", &username),
+            // lol
+            (
+                "queue_button_",
+                &queue_button(is_queued(1, &username, &state.pool).await),
+            ),
+        ],
+    )
+}
+
+pub async fn profile_comp(Path(username): Path<String>, State(state): State<CarnyState>) -> String {
+    let user = user::user_by_username(&username, &state.pool)
+        .await
+        .unwrap_or_default();
+
+    utils::load_file_replace_shit(
+        "html/profile.html",
+        &[
+            (
+                "animated_header_",
+                &animations::animated_header(&format!("{} - {}", &username, &user.role)),
+            ),
+            ("_rating_", &user.rating.to_string()),
+            ("_wins_", &user.wins.to_string()),
+            ("_losses_", &user.losses.to_string()),
             // lol
             (
                 "queue_button_",
