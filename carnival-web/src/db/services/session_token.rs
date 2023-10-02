@@ -20,10 +20,10 @@ pub async fn create(connection: &SocketAddr, user_id: i32, pool: &SqlitePool) ->
     // Doordash 20 times a week type money. You have no chance of getting it.
     // (This means we can't use a whole ass UUID as the hmac. Dang!)
 
-    let mut unique_hmac = String::from("fuey500");
-    if !cfg!(debug_assertions) {
-        unique_hmac = rand_str();
-    }
+    let mut unique_hmac = rand_str();
+    // if !cfg!(debug_assertions) {
+        
+    // }
 
     // TODO: This can panic >_<
 
