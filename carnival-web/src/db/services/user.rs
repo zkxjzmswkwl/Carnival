@@ -79,6 +79,19 @@ pub async fn does_battletag_exist(battletag: &str, pool: &SqlitePool) -> bool {
     does_exist::<User>("SELECT * FROM users WHERE battletag = $1", battletag, pool).await
 }
 
+pub struct LeaderboardEntry {
+    pub username: String,
+    pub role: String,
+    pub rating: i32,
+    pub wins: i32,
+    pub losses: i32,
+}
+pub async fn leaderboard_entries(pool: &SqlitePool) -> Result<Vec<LeaderboardEntry>, sqlx::Error> {
+    sqlx::query_file_as_unchecked!(LeaderboardEntry, "sql/order_users_rating.sql")
+        .fetch_all(pool)
+        .await
+}
+
 pub async fn create_user(
     username: &str,
     password: &str,
