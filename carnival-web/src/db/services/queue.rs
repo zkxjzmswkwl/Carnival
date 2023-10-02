@@ -1,6 +1,6 @@
 use sqlx::{SqlitePool, sqlite::SqliteQueryResult};
 
-use crate::db::{models::OverwatchMatch, services::overwatch_match::{ResolvedTeams, create_match}};
+use crate::db::services::overwatch_match::create_match;
 
 pub async fn is_queued(
     queue_id: i32,
@@ -30,12 +30,10 @@ pub async fn delete_user_from_queue(
     pool: &SqlitePool
 ) {
 
-    sqlx::query_file!(
-        "sql/delete_queued_player.sql", queue_id, user_id
-    )
-    .execute(pool)
-    .await
-    .map_err(|err| eprintln!("{err}"));
+    sqlx::query_file!("sql/delete_queued_player.sql", queue_id, user_id)
+        .execute(pool)
+        .await
+        .map_err(|err| eprintln!("{err}"));
 }
 
 #[derive(Default, Debug)]
