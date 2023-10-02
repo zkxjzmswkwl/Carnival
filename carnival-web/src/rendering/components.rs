@@ -2,22 +2,19 @@ use axum::{extract::{Path, State}, TypedHeader};
 use headers::Cookie;
 use sqlx::SqlitePool;
 
-use crate::{db::services::user, db::services::queue::{ResolvedQueue, is_queued}, CarnyState, DOMAIN};
+use crate::{db::services::user, db::services::{queue::{ResolvedQueue, is_queued}, user::leaderboard_entries}, CarnyState, DOMAIN};
 
 mod utils {
-  pub fn queue_table_row(username: &str, role: &str) -> String {
-    format!(r###"
-      <tr>
-          <td>{}</td>
-          <td>{}</td>
-      </tr>
-    "###, username, role)
+  pub fn generate_table_row(values: &[&str]) -> String {
+    let mut ret = "<tr>".to_string();
+    for val in values {
+      ret.push_str(&format!("<td>{}</td>", val));
+    }
+    ret.push_str("</tr>");
+    return ret;
   }
 }
 
-/*--------------------------------------------------
- * Javascript
---------------------------------------------------*/
 fn queue_button(is_queued: bool) -> String {
   match is_queued {
     true  => {
@@ -136,6 +133,51 @@ pub async fn login_form() -> String {
     "###, DOMAIN, js)
 }
 
+#[axum_macros::debug_handler]
+pub async fn leaderboard_comp(
+  State(state): State<CarnyState>,
+) -> String {
+
+    let js = animated_header("Leaderboard".to_string());
+    let mut rows = String::new();
+
+    let leaderboard_result = leaderboard_entries(&state.pool).await;
+    if leaderboard_result.is_ok() {
+      for entry in leaderboard_result.unwrap() {
+        rows.push_str(&utils::generate_table_row(&[
+                                                 &entry.username, 
+                                                 &format!("{}", entry.rating), 
+                                                 &format!("{}", entry.wins), 
+                                                 &format!("{}", entry.losses), 
+                                                 &entry.role]))
+      }
+    }
+    format!(r###"
+      <div class="cotainer p-4 bg-base-200 ovrflow-x-auto mx-auto w-1/2 mt-4">
+          <div clas="flex flex-col mb-2">
+            <div class="mb-3"><span id="animated-header" class="text-2xl text-white font-bold"></span></div>
+          </div>
+
+          <table class="table">
+              <thead class="bg-base-300">
+                  <tr class="boder-bottom border-[#1a8cd8]">
+                      <th class="text-lg">Player</th>
+                      <th class="text-lg">Rating</th>
+                      <th class="text-lg">Wins</th>
+                      <th class="text-lg">Losses</th>
+                      <th class="text-lg">Role</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  {}
+                  </tbody>
+              </thead>
+          </table>
+      </div>
+    {}"###, rows, js)
+
+}
+
 pub async fn base() -> String {
     r###"
         <html>
@@ -185,13 +227,13 @@ pub async fn base() -> String {
             <div class="navbar bg-base-300">
               <!-- Lefthand side -->
               <div class="navbar-start">
-                <a class="btn btn-ghost normal-case text-xl">Carnival</a>
+                <a href="/" class="btn btn-ghost normal-case text-xl">Carnival</a>
               </div>
 
               <!-- Center -->
               <div class="navbar-center">
                 <ul class="menu menu-horizontal px-1">
-                  <li><a>Leaderboard</a></li>
+                  <li><a href="/leaderboard">Leaderboard</a></li>
                   <!-- TODO: Implement an isAuthed check, display Play, Settings if authed. If not, display Register, Login -->
                   <li><a href="/queue">Play</a></li>
                   <!-- <li><a href="/register">Register</a></li> -->
@@ -230,13 +272,13 @@ pub async fn build_queue_comp(
   let mut support_rows = String::new();
 
   for tank in resolved_queue.tanks.iter() {
-    tank_rows.push_str(&utils::queue_table_row(&tank.username, &tank.role));
+    tank_rows.push_str(&utils::generate_table_row(&[&tank.username, &tank.role]));
   }
   for dps in resolved_queue.dps.iter() {
-    dps_rows.push_str(&utils::queue_table_row(&dps.username, &dps.role));
+    dps_rows.push_str(&utils::generate_table_row(&[&dps.username, &dps.role]));
   }
   for support in resolved_queue.supports.iter() {
-    support_rows.push_str(&utils::queue_table_row(&support.username, &support.role));
+    support_rows.push_str(&utils::generate_table_row(&[&support.username, &support.role]));
   }
 
   let js = animated_header("Queue".to_string());

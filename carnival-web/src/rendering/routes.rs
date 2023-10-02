@@ -26,7 +26,6 @@ pub async fn register_route() -> Html<String> {
     )
 }
 
-/// NOT IMPLEMENTED
 pub async fn leaderboard_route() -> Html<String> {
     Html(base().await.replace(
             "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -52,3 +51,4 @@ pub async fn profile_route() -> Html<String> {
         )
     )
 }
+
