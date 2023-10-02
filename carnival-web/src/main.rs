@@ -1,18 +1,12 @@
 #[macro_use]
 extern crate dotenv_codegen;
 
-use std::ops::ControlFlow;
 use std::{net::SocketAddr, env};
-use axum::TypedHeader;
-use axum::extract::ConnectInfo;
-use axum::extract::ws::Message;
-use axum::response::IntoResponse;
 use http::{Method, HeaderName};
 use rendering::components::{register_form, login_form, hero, queue_table, queue_user_panel, leaderboard_comp};
 use rendering::routes::{register_route, login_route, index, queue_route, leaderboard_route, profile_route};
 use tower_http::cors::{Any, CorsLayer};
 use axum::{
-    extract::{ws::{WebSocket, WebSocketUpgrade}, State},
     routing::{get, post},
     Router,
     Server, http::header::CONTENT_TYPE
@@ -118,6 +112,7 @@ async fn main() {
         .route("/login", get(login_route))
         .route("/register", get(register_route))
         .route("/queue", get(queue_route))
+        .route("/play", get(queue_route))
         .route("/leaderboard", get(leaderboard_route))
         .route("/@:username", get(profile_route))
         // Components

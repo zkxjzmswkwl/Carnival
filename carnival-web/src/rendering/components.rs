@@ -4,11 +4,76 @@ use sqlx::SqlitePool;
 
 use crate::{db::services::user, db::services::{queue::{ResolvedQueue, is_queued}, user::leaderboard_entries}, CarnyState, DOMAIN};
 
+mod animations {
+    pub fn table_domino(event_htmx_afterload: bool) -> String {
+        // htmx:afterOnLoad
+        let mut ret = String::from("<script>");
+        if event_htmx_afterload {
+            ret.push_str(r###"
+                document.addEventListener("htmx:afterOnLoad", () => {
+            "###);
+        }
+
+                
+        ret.push_str(r###"
+            const rows = document.querySelectorAll(".row");
+
+            // Function to animate a single row
+            function animateRow(row, delay) {
+              anime({
+                targets: row,
+                opacity: [0, 1],
+                translateY: [10, 0],
+                easing: "easeOutExpo",
+                duration: 800,
+                delay: delay,
+              });
+            }
+
+            // Loop through the rows and animate them with a delay
+            rows.forEach((row, index) => {
+              animateRow(row, index * 10); // Adjust the delay as needed
+            });
+        "###);
+
+        if event_htmx_afterload {
+            ret.push_str("});");
+        }
+        ret.push_str("</script>");
+        ret
+    }
+
+    pub fn animated_header(header_text: &str) -> String {
+        r###"
+        <script>
+          // cba. Let's us avoid Javascript's async execution from fucking us.
+          document.getElementById('animated-header').textContent = document.getElementById('animated-header').textContent = "^.^"
+          document.getElementById('animated-header').innerHTML = document.getElementById('animated-header').textContent.replace(/\S/g, '<span class=\"letter\">$&</span>');
+          anime.timeline({loop: false})
+            .add({
+              targets: '#animated-header .letter',
+              translateX: [40, 0],
+              translateZ: 0,
+              opacity: [0, 1],
+              easing: 'easeOutExpo',
+              duration: 700,
+              delay: (el, i) => 500 + 30 * i
+            }).add({
+              targets: '#animated-header',
+              backgroundSize: '100%',
+              duration: 800,
+              easing: 'easeOutExpo'
+            });
+          </script>
+          "###.replace("^.^", header_text)
+    }
+}
+
 mod utils {
   pub fn generate_table_row(values: &[&str]) -> String {
     let mut ret = "<tr>".to_string();
     for val in values {
-      ret.push_str(&format!("<td>{}</td>", val));
+      ret.push_str(&format!("<td class=\"row opacity-0\">{}</td>", val));
     }
     ret.push_str("</tr>");
     return ret;
@@ -54,30 +119,7 @@ fn queue_button(is_queued: bool) -> String {
   }
 }
 
-pub fn animated_header(header_text: String) -> String {
-    r###"
-    <script>
-      // cba. Let's us avoid Javascript's async execution from fucking us.
-      document.getElementById('animated-header').textContent = document.getElementById('animated-header').textContent = "^.^"
-      document.getElementById('animated-header').innerHTML = document.getElementById('animated-header').textContent.replace(/\S/g, '<span class=\"letter\">$&</span>');
-      anime.timeline({loop: false})
-        .add({
-          targets: '#animated-header .letter',
-          translateX: [40, 0],
-          translateZ: 0,
-          opacity: [0, 1],
-          easing: 'easeOutExpo',
-          duration: 700,
-          delay: (el, i) => 500 + 30 * i
-        }).add({
-          targets: '#animated-header',
-          backgroundSize: '100%',
-          duration: 800,
-          easing: 'easeOutExpo'
-        });
-      </script>
-      "###.replace("^.^", &header_text)
-}
+
 
 pub async fn hero() -> &'static str {
     r###"
@@ -98,13 +140,12 @@ pub async fn hero() -> &'static str {
 }
 
 pub async fn register_form() -> String {
-    let js = animated_header("Register".to_string());
     format!(r###"<div class="container mt-4 mx-auto w-1/4 bg-base-200 p-6 rounded-lg">
       <div class="mb-3"><span id="animated-header" class="text-2xl text-white font-bold"></span></div>
       <form hx-post="{}/api/register" hx-ext="json-enc" class="join join-vertical w-full">
         <input name="username" type="text" placeholder="Username" class="input input-bordered rounded-lg mb-2 w-full">
         <input name="battletag" type="text" placeholder="Battletag (Case sensitive)" class="input input-bordered rounded-lg mb-2 w-full">
-        <select name="role" class="select select-bordered w-full max-w-xs mb-2">
+        <select name="role" class="select select-bordered w-full mb-2">
           <option disabled selected>Role</option>
           <option>Tank</option>
           <option>DPS</option>
@@ -115,11 +156,10 @@ pub async fn register_form() -> String {
         <button class="btn btn-wide bg-[#1a8cd8] text-white w-full">Register</button>
       </form>
     </div>
-    {}"###, DOMAIN, js)
+    {}"###, DOMAIN, animations::animated_header("Register"))
 }
 
 pub async fn login_form() -> String {
-    let js = animated_header("Login".to_string());
     format!(r###"
     <div class="container mt-4 mx-auto w-1/4 bg-base-200 p-6 rounded-lg">
       <div class="mb-3"><span id="animated-header" class="text-2xl text-white font-bold"></span></div>
@@ -130,7 +170,7 @@ pub async fn login_form() -> String {
       </form>
     </div>
     {},
-    "###, DOMAIN, js)
+    "###, DOMAIN, animations::animated_header("Login"))
 }
 
 #[axum_macros::debug_handler]
@@ -138,21 +178,23 @@ pub async fn leaderboard_comp(
   State(state): State<CarnyState>,
 ) -> String {
 
-    let js = animated_header("Leaderboard".to_string());
     let mut rows = String::new();
-
     let leaderboard_result = leaderboard_entries(&state.pool).await;
     if leaderboard_result.is_ok() {
       for entry in leaderboard_result.unwrap() {
-        rows.push_str(&utils::generate_table_row(&[
-                                                 &entry.username, 
-                                                 &format!("{}", entry.rating), 
-                                                 &format!("{}", entry.wins), 
-                                                 &format!("{}", entry.losses), 
-                                                 &entry.role]))
+        rows.push_str(
+            &utils::generate_table_row(&[
+                &entry.username, 
+                &format!("{}", entry.rating), 
+                &format!("{}", entry.wins), 
+                &format!("{}", entry.losses), 
+                &entry.role
+            ])
+        )
       }
     }
     format!(r###"
+    {}
       <div class="cotainer p-4 bg-base-200 ovrflow-x-auto mx-auto w-1/2 mt-4">
           <div clas="flex flex-col mb-2">
             <div class="mb-3"><span id="animated-header" class="text-2xl text-white font-bold"></span></div>
@@ -174,12 +216,39 @@ pub async fn leaderboard_comp(
               </thead>
           </table>
       </div>
-    {}"###, rows, js)
+    {}"###, animations::table_domino(false), rows, animations::animated_header("Leaderboard"))
 
 }
 
-pub async fn base() -> String {
-    r###"
+pub async fn base(
+    pool: &SqlitePool,
+    cookies: &Cookie,
+) -> String {
+
+    let authed_items = ["Leaderboard", "Play", "Settings"];
+    let noauth_items = ["Leaderboard", "Register", "Login"];
+
+    let user_option = user::from_cookies(&cookies, pool).await;
+    let user = user_option.unwrap_or_default();
+    println!("{:#?}", user);
+
+    let mut header_list: String = String::new();
+
+    if user.id == 0 {
+        for item in noauth_items {
+            header_list.push_str(
+                &format!("<li><a href=\"{}\">{}</a></li>", item.to_lowercase(), item)
+            )
+        }
+    } else {
+        for item in authed_items {
+            header_list.push_str(
+                &format!("<li><a href=\"{}\">{}</a></li>", item.to_lowercase(), item)
+            )
+        }
+    }
+
+    format!(r###"
         <html>
           <head>
             <title>Carnival</title>
@@ -204,21 +273,21 @@ pub async fn base() -> String {
 
             <!-- I'm not sure it even matters if we shove this into its own file or not. Like, sure, it's not being minified. But do we fucking care? Honestly? -->
             <style>
-              body {
+              body {{
                 font-family: "Poppins"
-              }
-              .svg-in-button {
+              }}
+              .svg-in-button {{
                 fill: #fff !important;
-              }
-              #animated-header {
+              }}
+              #animated-header {{
                 background-image: linear-gradient(transparent calc(97% - 1px), #1a8cd8 2px);
                 background-size: 0;
                 background-repeat: no-repeat;
                 display: infinite;
-              }
-              #animated-header .letter {
+              }}
+              #animated-header .letter {{
                 display: inline-block;
-              }
+              }}
             </style>
           </head>
           <body>
@@ -233,12 +302,7 @@ pub async fn base() -> String {
               <!-- Center -->
               <div class="navbar-center">
                 <ul class="menu menu-horizontal px-1">
-                  <li><a href="/leaderboard">Leaderboard</a></li>
-                  <!-- TODO: Implement an isAuthed check, display Play, Settings if authed. If not, display Register, Login -->
-                  <li><a href="/queue">Play</a></li>
-                  <!-- <li><a href="/register">Register</a></li> -->
-                  <!-- <li><a href="/login">Login</a></li> -->
-                  <li><a>Settings</a></li>
+                {}
                 </ul>
               </div>
 
@@ -248,11 +312,15 @@ pub async fn base() -> String {
               </div>
             </div>
             <!-- HEADER END   -->
-            <div id="app">Loading</div>
+            <div id="app">
+                <div class="flex h-screen">
+                    <span class="m-auto loading loading-bars loading-lg"></span>
+                </div>
+            </div>
             https://www.youtube.com/watch?v=dQw4w9WgXcQ
           </body>
         </html>
-    "###.to_string()
+    "###, header_list)
 }
 
 pub async fn build_queue_comp(
@@ -281,9 +349,8 @@ pub async fn build_queue_comp(
     support_rows.push_str(&utils::generate_table_row(&[&support.username, &support.role]));
   }
 
-  let js = animated_header("Queue".to_string());
   format!(
-    r###"{}
+    r###"{}{}
       <div class="cotainer p-4 bg-base-200 ovrflow-x-auto mx-auto w-1/2 mt-4">
           <div clas="flex flex-col mb-2">
               <!-- Queue title, changes for each queue -->
@@ -312,8 +379,10 @@ pub async fn build_queue_comp(
               </thead>
           </table>
       </div>
-  </div>"###,
-    js,
+  </div>
+  "###,
+    animations::table_domino(true),
+    animations::animated_header("Queue"),
     DOMAIN,
     resolved_user.unwrap().username,
     tank_rows,
@@ -327,7 +396,7 @@ pub async fn queue_table(
   State(state): State<CarnyState>,
   TypedHeader(cookies): TypedHeader<Cookie>
 ) -> String {
-  build_queue_comp(&cookies, &state.pool).await
+    build_queue_comp(&cookies, &state.pool).await
 }
 
 pub async fn queue_user_panel(
