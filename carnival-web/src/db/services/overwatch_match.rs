@@ -1,9 +1,8 @@
 use sqlx::{SqlitePool, sqlite::SqliteQueryResult};
 
-use crate::db::models::{OverwatchMatch, OverwatchMatchPlayer, User};
+use crate::db::{models::{OverwatchMatch, OverwatchMatchPlayer}, services::queue::delete_user_from_queue};
 
-use super::user;
-
+#[allow(dead_code)]
 pub async fn create_map(
     map_name: &str,
     map_mode: &str,
@@ -18,12 +17,13 @@ pub async fn create_map(
         .await
 }
 
+#[allow(dead_code)]
 pub async fn create_match(
     map_id: i32,
     blue_team: &Vec<i32>,
     red_team: &Vec<i32>,
     pool: &SqlitePool
-) -> Result<SqliteQueryResult, sqlx::Error> {
+) -> Result<i32, sqlx::Error> {
 
     // Because we should **never** be inserting rows into the
     // `overwatch_match_players` table for **any other reason**.
@@ -57,15 +57,27 @@ pub async fn create_match(
         "SELECT id FROM (select (1) as id) overwatch_match ORDER BY id DESC LIMIT 1"
     ).fetch_one(pool).await;
 
-    if let Ok(match_record) = latest_match_result {
-        for player_id in blue_team.iter() {
-            insert_match_player(player_id, &match_record.id, 1, pool).await.map_err(|err| eprintln!("{err}"));
-        }
-        for player_id in red_team.iter() {
-            insert_match_player(player_id, &match_record.id, 2, pool).await.map_err(|err| eprintln!("{err}"));
-        }
+    match latest_match_result {
+        Ok(new_match) => {
+            for player_id in blue_team.iter() {
+                match insert_match_player(player_id, &new_match.id, 1, pool).await {
+                    // TODO: Only support 1 queue at the moment.
+                    Ok(_) => delete_user_from_queue(&1, player_id, pool).await,
+                    Err(e) => eprintln!("{e}")
+                }
+            }
+            for player_id in red_team.iter() {
+                match insert_match_player(player_id, &new_match.id, 2, pool).await {
+                    // TODO: Only support 1 queue at the moment.
+                    Ok(_) => delete_user_from_queue(&1, player_id, pool).await,
+                    Err(e) => eprintln!("{e}")
+                }
+            }
+            Ok(new_match.id)
+        },
+        Err(e) => Err(e)
+
     }
-    match_result
 }
 
 pub async fn get_match_by_id(
@@ -77,6 +89,7 @@ pub async fn get_match_by_id(
     ).bind(id).fetch_one(pool).await
 }
 
+#[allow(dead_code)]
 pub async fn get_match_players(
     match_id: i32,
     pool: &SqlitePool
@@ -94,6 +107,13 @@ pub struct ResolvedTeams {
     red: Vec<String>
 }
 impl ResolvedTeams {
+    // These shouldn't be vectors of strings
+    // since they're being reallocated with a call to new.
+    pub fn new(blue: Vec<String>, red: Vec<String>) -> Self {
+        Self { blue, red }
+    }
+
+    /// Intended for retrieving data to display.
     pub async fn for_match(
         ow_match_id: i32,
         pool: &SqlitePool
@@ -132,6 +152,7 @@ impl ResolvedTeams {
     }
 }
 
+#[allow(dead_code)]
 pub async fn get_team(
     match_id: i32,
     team_id: u8,
@@ -154,6 +175,7 @@ pub struct ResolvedOverwatchMatch {
 }
 
 impl ResolvedOverwatchMatch {
+    #[allow(dead_code)]
     pub async fn from_id(ow_match_id: i32, pool: &SqlitePool) -> Self {
         let overwatch_match = get_match_by_id(ow_match_id, pool).await.unwrap_or_else(|err| {
             eprintln!("{err}");

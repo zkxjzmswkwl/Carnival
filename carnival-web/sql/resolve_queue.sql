@@ -1,6 +1,7 @@
 select
-    queued_players.role,
-    users.username
+    users.username,
+    users.id,
+    queued_players.role
 FROM
     (
         queued_players
