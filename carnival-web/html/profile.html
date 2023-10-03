@@ -1,0 +1,77 @@
+animated_header_
+<div class="h-full bg-base-100  sm:pt-0">
+  <div class="flex flex-col justify-center bg-[url(https://cdn2.steamgriddb.com/file/sgdb-cdn/hero/bdb106a0560c4e46ccc488ef010af787.jpg)]">
+
+    <!-- Background needs its own element, since we need to create another to contain user information anyway. -->
+    <div class="header-area backdrop-blur-md bg-gradient-to-l from-base-200 to-base-100/50 rounded-none border-b-2 border-b-[#146aa3] pb-10">
+
+      <!-- This is what contains the user information displayed over the header background. -->
+      <div class="w-5/6 mx-auto mt-10">
+        <div class="flex flex-row justify-between">
+          <div class="flex space-x-4 lefthand-side w-1/2">
+            <img class="w-32 h-32 rounded-full drop-shadow-[0_1.2px_8.2px_rgba(0,0,0,0.8)]" src="https://i.imgur.com/pQ3IJhn.jpg"/>
+            <!-- Flex col for the name, rating, etc, that we want stacked ontop of one another to the right of the avatar. -->
+            <div class="flex flex-col space-y-1">
+              <!-- Is replaced with the user's username and animated by the js loaded at the head of this file -->
+              <div class=""><span id="animated-header" class="text-2xl text-white font-bold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"></span></div>
+              <!-- Replace this with an icon, once we figure out which icons to use for each role. -->
+              <div class="text-xs text-[#ddd] italic drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">Offline</div>
+              
+              <div class="flex flex-row space-x-3">
+                <button class="btn btn-sm bg-[#1a8cd8] text-white border-none w-3/5">Message</button>
+                <button class="btn btn-sm bg-red-600 text-white border-none w-2/5">Report</button>
+              </div>
+            </div>
+          </div>
+
+          <!--
+            Idea is to have something like
+
+                      1143               900 
+          (large font)Wins  (large font)Losses 
+
+          docked on the far right of the header area
+          -->
+          <div class="flex justify-end  mt-10 w-1/2">
+            <div class="flex flex-col rating min-w-[20%] text-center">
+              <div class="text-xl text-[#eee] font-bold tracking-widest drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">_rating_</div>
+              <div class="text-3xl text-[#1a8cd8] font-bold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">Rating</div>
+            </div>
+
+            <div class="flex flex-col wins min-w-[20%] text-center">
+              <div class="text-xl text-[#eee] font-bold tracking-widest drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">1143</div>
+              <div class="text-3xl text-[#1a8cd8] font-bold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">Wins</div>
+            </div>
+
+            <div class="flex flex-col losses min-w-[20%] text-center">
+              <div class="text-xl text-[#eee] font-bold tracking-widest drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">900</div>
+              <div class="text-3xl text-[#626262] font-bold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">Losses</div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Header ends here-->
+
+    <!--
+      The idea is for these to be tabs - when a tab is clicked, it's set to active and the content below the header is swapped out
+      respective to the active tab.
+    -->
+    <div  class="grid grid-cols-3 content-between">
+      <!-- For the bg inversion on-hover, I cba to smooth the transition atm. -->
+      <div class="pleft bg-[url(https://i.imgur.com/foHKeOn.png)] bg-contain hover:bg-[url(https://i.imgur.com/zKZ5zTM.png)] transition ease-in-out ">
+        <div class="text-xl text-white tracking-wide font-medium text-center p-4 text-[#ccc]">Achievements</div>
+      </div>
+      <div class="pcenter bg-[url(https://i.imgur.com/foHKeOn.png)] bg-contain hover:bg-[url(https://i.imgur.com/zKZ5zTM.png)] transition ease-in-out ">
+        <div class="text-xl text-white tracking-wide font-medium text-center p-4 text-[#ccc] ">Matches</div>
+      </div>
+      <div class="pright bg-[url(https://i.imgur.com/foHKeOn.png)] bg-contain hover:bg-[url(https://i.imgur.com/zKZ5zTM.png)] transition ease-in-out ">
+        <div class="text-xl text-white tracking-wide font-medium text-center p-4 text-[#ccc]">Clips</div>
+      </div>
+    </div>
+</div>
+

@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, fs};
+use std::{fs, net::SocketAddr};
 
 use crate::db::services::queue::pop_queue;
 use crate::db::services::session_token as session;
@@ -16,22 +16,19 @@ use axum::{
 };
 use easy_password::bcrypt::verify_password;
 use headers::Cookie;
-use http::{StatusCode, HeaderValue};
+use http::{HeaderValue, StatusCode};
 use static_str_ops::static_format;
 
-
 use super::payloads::{JoinQueueInput, LeaveQueueInput};
-
 
 async fn validate_session_cookie(
     user_id: i32,
     connection: &SocketAddr,
     state: &CarnyState,
 ) -> bool {
-
     match session::validate(&connection, user_id, &state.pool).await {
         Some(_) => return true,
-        None    => return false
+        None => return false,
     }
 }
 
@@ -42,13 +39,16 @@ pub async fn register(
     // NOTE(aalhendi): is this needed?
     // NOTE(Carter): It's for clarity - putting 40 bytes on the stack
     // doesn't matter.
-    let username:      &str = &post_data.username;
-    let battletag:     &str = &post_data.battletag;
-    let role:          &str = &post_data.role;
-    let password:      &str = &post_data.password;
+    let username: &str = &post_data.username;
+    let battletag: &str = &post_data.battletag;
+    let role: &str = &post_data.role;
+    let password: &str = &post_data.password;
     let password_conf: &str = &post_data.password_conf;
 
-    if !vec!["Tank", "DPS", "Support"].iter().any(|x| role.contains(x)) {
+    if !vec!["Tank", "DPS", "Support"]
+        .iter()
+        .any(|x| role.contains(x))
+    {
         return (StatusCode::BAD_REQUEST, "Role does not exist".to_string());
     }
 
@@ -74,13 +74,15 @@ pub async fn register(
     }
 
     match user::create_user(username, password, battletag, role, &state.pool).await {
-
         Ok(_) => {
             let redirect_js = fs::read_to_string("js/redirect_register.js")
                 .unwrap_or("User created. Error redirecting.".to_string());
 
-            (StatusCode::CREATED, format!("<script>{}</script>", redirect_js))
-        },
+            (
+                StatusCode::CREATED,
+                format!("<script>{}</script>", redirect_js),
+            )
+        }
         Err(e) => {
             eprintln!("{e}");
             (
@@ -143,14 +145,16 @@ pub async fn login(
         match session::validate(&connection, user.id, &state.pool).await {
             // If it hasn't, cool. Set the cookie and be done with it.
             Some(session) => {
-                let redirect_js = fs::read_to_string("js/redirect_login.js").unwrap_or("User created. Error redirecting.".to_string());
+                let redirect_js = fs::read_to_string("js/redirect_login.js")
+                    .unwrap_or("User created. Error redirecting.".to_string());
 
                 *r.status_mut() = StatusCode::OK;
                 *r.body_mut() = Full::from(format!("<script>{}</script>", redirect_js));
 
                 r.headers_mut().insert(
                     "Set-Cookie",
-                    HeaderValue::from_str(static_format!("session_id=Bearer {};path=/;", session)).unwrap(),
+                    HeaderValue::from_str(static_format!("session_id=Bearer {};path=/;", session))
+                        .unwrap(),
                 );
             }
             // If it has, we get very upset and tell the client that their actions are
@@ -175,21 +179,24 @@ pub async fn join_queue(
     State(state): State<CarnyState>,
     Json(post_data): Json<JoinQueueInput>,
 ) -> (StatusCode, String) {
-
     let queue_id_i32: i32 = post_data.queue_id.parse().unwrap_or_default();
     if let Some(requesting_user) = user::from_cookies(&cookies, &state.pool).await {
-
         if !validate_session_cookie(requesting_user.id, &connection, &state).await {
-            return (StatusCode::NOT_ACCEPTABLE,
-                    "Detected some funky stuff. Token invalidated.".to_string());
+            return (
+                StatusCode::NOT_ACCEPTABLE,
+                "Detected some funky stuff. Token invalidated.".to_string(),
+            );
         }
 
         if queue::add_user_to_queue(
             queue_id_i32,
             requesting_user.id,
-            &requesting_user.role, 
-            &state.pool
-        ).await.is_ok() {
+            &requesting_user.role,
+            &state.pool,
+        )
+        .await
+        .is_ok()
+        {
             let new_match_option = pop_queue(queue_id_i32, &state.pool).await;
             if new_match_option.is_none() {
                 println!("Queue did not pop");
@@ -214,7 +221,6 @@ pub async fn leave_queue(
     State(state): State<CarnyState>,
     Json(post_data): Json<LeaveQueueInput>,
 ) -> (StatusCode, String) {
-
     // TODO: This has no error handling.
     // All that can be used to determine if something's gone wrong
     // here, is the fact that `queue::delete_user_from_queue` calls `eprintln!`.
@@ -222,16 +228,17 @@ pub async fn leave_queue(
     let queue_id_i32: i32 = post_data.queue_id.parse().unwrap_or_default();
     if let Some(requesting_user) = user::from_cookies(&cookies, &state.pool).await {
         if !validate_session_cookie(requesting_user.id, &connection, &state).await {
-            return (StatusCode::NOT_ACCEPTABLE,
-                    "Detected some funky stuff. Token invalidated.".to_string());
+            return (
+                StatusCode::NOT_ACCEPTABLE,
+                "Detected some funky stuff. Token invalidated.".to_string(),
+            );
         }
 
-        queue::delete_user_from_queue(
-            &queue_id_i32,
-            &requesting_user.id,
-            &state.pool
-        ).await;
-        return (StatusCode::OK, build_queue_comp(&cookies, &state.pool).await);
+        queue::delete_user_from_queue(&queue_id_i32, &requesting_user.id, &state.pool).await;
+        return (
+            StatusCode::OK,
+            build_queue_comp(&cookies, &state.pool).await,
+        );
     }
     (StatusCode::OK, "Uhoh".to_string())
 }
