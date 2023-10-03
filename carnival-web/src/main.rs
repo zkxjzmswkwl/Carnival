@@ -1,27 +1,27 @@
 #[macro_use]
 extern crate dotenv_codegen;
 
-use std::{net::SocketAddr, env};
-use http::{Method, HeaderName};
-use rendering::components::{register_form, login_form, hero, queue_table, queue_user_panel, leaderboard_comp};
-use rendering::routes::{register_route, login_route, index, queue_route, leaderboard_route, profile_route};
-use tower_http::cors::{Any, CorsLayer};
-use axum::{
-    routing::{get, post},
-    Router,
-    Server, http::header::CONTENT_TYPE
-};
-use api::endpoints::{
-    register,
-    login, join_queue, leave_queue
-};
-use sqlx::{SqlitePool, Sqlite, migrate::MigrateDatabase};
 use crate::db::queries::tables;
+use api::endpoints::{join_queue, leave_queue, login, register};
+use axum::{
+    http::header::CONTENT_TYPE,
+    routing::{get, post},
+    Router, Server,
+};
+use http::{HeaderName, Method};
+use rendering::components::{
+    hero, leaderboard_comp, login_form, profile_comp, queue_table, queue_user_panel, register_form,
+};
+use rendering::routes::{
+    index, leaderboard_route, login_route, profile_route, queue_route, register_route,
+};
+use sqlx::{migrate::MigrateDatabase, Sqlite, SqlitePool};
+use std::{env, net::SocketAddr};
+use tower_http::cors::{Any, CorsLayer};
 
-mod db;
 mod api;
+mod db;
 mod rendering;
-
 
 const HMAC_KEY: &[u8] = dotenv!("HMAC_KEY").as_bytes();
 const DATABASE_URL: &str = dotenv!("DATABASE_URL");
@@ -29,38 +29,73 @@ const DOMAIN: &str = dotenv!("DOMAIN");
 
 #[derive(Clone)]
 pub struct CarnyState {
-    pool: SqlitePool
+    pool: SqlitePool,
 }
 
 async fn create_tables(pool: &SqlitePool) {
-
-    let create_user_table_result = sqlx::query(tables::CREATE_USERS).execute(pool).await.unwrap();
+    let create_user_table_result = sqlx::query(tables::CREATE_USERS)
+        .execute(pool)
+        .await
+        .unwrap();
     println!("User table creation -> {:?}", create_user_table_result);
 
-    let create_session_result = sqlx::query(tables::CREATE_SESSION_TOKENS).execute(pool).await.unwrap();
-    println!("Session Token table creation -> {:?}", create_session_result);
+    let create_session_result = sqlx::query(tables::CREATE_SESSION_TOKENS)
+        .execute(pool)
+        .await
+        .unwrap();
+    println!(
+        "Session Token table creation -> {:?}",
+        create_session_result
+    );
 
-    let create_ow_map_result = sqlx::query(&tables::CREATE_OW_MAP).execute(pool).await.unwrap();
-    println!("Overwatch Maps table creation -> {:?}", create_ow_map_result);
+    let create_ow_map_result = sqlx::query(&tables::CREATE_OW_MAP)
+        .execute(pool)
+        .await
+        .unwrap();
+    println!(
+        "Overwatch Maps table creation -> {:?}",
+        create_ow_map_result
+    );
 
-    let create_ow_match_player_result = sqlx::query(&tables::CREATE_OW_MATCH_THRU).execute(pool).await.unwrap();
-    println!("Overwatch Match thru table creation -> {:?}", create_ow_match_player_result);
+    let create_ow_match_player_result = sqlx::query(&tables::CREATE_OW_MATCH_THRU)
+        .execute(pool)
+        .await
+        .unwrap();
+    println!(
+        "Overwatch Match thru table creation -> {:?}",
+        create_ow_match_player_result
+    );
 
-    let create_ow_match_result = sqlx::query(&tables::CREATE_OW_MATCH).execute(pool).await.unwrap();
-    println!("Overwatch Match table creation -> {:?}", create_ow_match_result);
+    let create_ow_match_result = sqlx::query(&tables::CREATE_OW_MATCH)
+        .execute(pool)
+        .await
+        .unwrap();
+    println!(
+        "Overwatch Match table creation -> {:?}",
+        create_ow_match_result
+    );
 
-    let create_queue_result = sqlx::query(&tables::CREATE_QUEUE).execute(pool).await.unwrap();
+    let create_queue_result = sqlx::query(&tables::CREATE_QUEUE)
+        .execute(pool)
+        .await
+        .unwrap();
     println!("Queue table creation -> {:?}", create_queue_result);
 
-    let create_queued_players_result = sqlx::query(&tables::CREATE_QUEUED_PLAYERS).execute(pool).await.unwrap();
-    println!("Queued Players table creation -> {:?}", create_queued_players_result);
+    let create_queued_players_result = sqlx::query(&tables::CREATE_QUEUED_PLAYERS)
+        .execute(pool)
+        .await
+        .unwrap();
+    println!(
+        "Queued Players table creation -> {:?}",
+        create_queued_players_result
+    );
 }
 
 impl CarnyState {
     pub async fn new() -> Self {
         match Sqlite::create_database(DATABASE_URL).await {
             Ok(_) => println!("Ok"),
-            Err(e) => panic!("Error -> {}", e)
+            Err(e) => panic!("Error -> {}", e),
         }
 
         let pool = SqlitePool::connect(DATABASE_URL).await.unwrap();
@@ -77,7 +112,7 @@ async fn main() {
     }
 
     //
-    // Websocket shit 
+    // Websocket shit
     // Spawning a thread for websocket tcp listener.
     // Pretty sure this is a bad idea.
     // Concurrency issues with the db and that.
@@ -100,10 +135,10 @@ async fn main() {
         .allow_methods([Method::GET, Method::POST])
         .allow_origin(Any)
         .allow_headers([
-           CONTENT_TYPE,
-           HeaderName::from_lowercase(b"hx-request").unwrap(),
-           HeaderName::from_lowercase(b"hx-current-url").unwrap(),
-           HeaderName::from_lowercase(b"hx-target").unwrap(),
+            CONTENT_TYPE,
+            HeaderName::from_lowercase(b"hx-request").unwrap(),
+            HeaderName::from_lowercase(b"hx-current-url").unwrap(),
+            HeaderName::from_lowercase(b"hx-target").unwrap(),
         ]);
 
     let app: Router = Router::new()
@@ -121,7 +156,11 @@ async fn main() {
         .route("/components/hero", get(hero))
         .route("/components/leaderboard", get(leaderboard_comp))
         .route("/components/queue_table", get(queue_table))
-        .route("/components/queue_user_table/:username", get(queue_user_panel))
+        .route("/components/profile/:username", get(profile_comp))
+        .route(
+            "/components/queue_user_table/:username",
+            get(queue_user_panel),
+        )
         // Endpoints
         .route("/api/register", post(register))
         .route("/api/login", post(login))

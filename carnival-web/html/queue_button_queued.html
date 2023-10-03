@@ -1,0 +1,13 @@
+<input type="hidden" id="queue_id" name="queue_id" value="1" />
+<button 
+  class="btn btn-md bg-[#1a8cd8] text-white md:w-25 lg:w-60 overflow-auto"
+  hx-post="/api/leave_queue"
+  hx-ext="json-enc"
+  hx-include="[name='queue_id']"
+  hx-target="#app">
+
+
+  <span class="loading loading-infinity loading-md"></span>
+  <div>Leave Queue</div>
+</button>
+
