@@ -4,10 +4,15 @@ extern crate dotenv_codegen;
 use crate::db::queries::tables;
 use api::endpoints::{join_queue, leave_queue, login, register};
 use axum::{
+    extract::ws::{Message, WebSocket, WebSocketUpgrade},
+    extract::State,
     http::header::CONTENT_TYPE,
+    response::IntoResponse,
     routing::{get, post},
     Router, Server,
 };
+use db::services::overwatch_match::ResolvedOverwatchMatch;
+use futures::{stream::StreamExt, SinkExt};
 use http::{HeaderName, Method};
 use rendering::components::{
     hero, leaderboard_comp, login_form, profile_comp, queue_table, queue_user_panel, register_form,
@@ -17,20 +22,17 @@ use rendering::routes::{
 };
 use sqlx::{migrate::MigrateDatabase, Sqlite, SqlitePool};
 use std::{env, net::SocketAddr};
+use tokio::sync::mpsc;
 use tower_http::cors::{Any, CorsLayer};
 
 mod api;
+mod commserver;
 mod db;
 mod rendering;
 
 const HMAC_KEY: &[u8] = dotenv!("HMAC_KEY").as_bytes();
 const DATABASE_URL: &str = dotenv!("DATABASE_URL");
 const DOMAIN: &str = dotenv!("DOMAIN");
-
-#[derive(Clone)]
-pub struct CarnyState {
-    pool: SqlitePool,
-}
 
 async fn create_tables(pool: &SqlitePool) {
     let create_user_table_result = sqlx::query(tables::CREATE_USERS)
@@ -91,6 +93,11 @@ async fn create_tables(pool: &SqlitePool) {
     );
 }
 
+#[derive(Clone)]
+pub struct CarnyState {
+    pool: SqlitePool,
+}
+
 impl CarnyState {
     pub async fn new() -> Self {
         match Sqlite::create_database(DATABASE_URL).await {
@@ -105,27 +112,37 @@ impl CarnyState {
     }
 }
 
+async fn wshandler(ws: WebSocketUpgrade, State(state): State<CarnyState>) -> impl IntoResponse {
+    ws.on_upgrade(|socket| websocket(socket, state))
+}
+
+async fn websocket(stream: WebSocket, state: CarnyState) {
+    let (mut sender, mut receiver) = stream.split();
+    let mut username = String::new();
+    let mut id: i32 = 0;
+    let mut token = String::new();
+
+    while let Some(Ok(message)) = receiver.next().await {
+        if let Message::Text(recv) = message {
+            if recv.starts_with("whattup_bitch:") && recv.contains(":im:") {
+                let deets = recv.split(":").collect::<Vec<&str>>();
+                token = deets[1].to_string();
+                id = deets[4].parse().unwrap();
+            }
+            // println!("{:#?}", recv);
+            sender.send(Message::Text(String::from("sup bitch"))).await;
+            sender
+                .send(Message::Text(format!("{}\t{}", token, id)))
+                .await;
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() {
     if cfg!(debug_assertions) {
         env::set_var("RUST_BACKTRACE", "1");
     }
-
-    //
-    // Websocket shit
-    // Spawning a thread for websocket tcp listener.
-    // Pretty sure this is a bad idea.
-    // Concurrency issues with the db and that.
-    //
-    // thread::spawn(move || async move {
-    //     let ws_router = Router::new()
-    //         .route("/ws/notifications", get(ws_handler));
-    //     Server::bind(&"0.0.0.0:6969".parse().unwrap())
-    //         .serve(ws_router.into_make_service_with_connect_info::<SocketAddr>())
-    //         .await
-    //         .unwrap();
-    // });
-    //
 
     //
     // http routes
@@ -140,6 +157,9 @@ async fn main() {
             HeaderName::from_lowercase(b"hx-current-url").unwrap(),
             HeaderName::from_lowercase(b"hx-target").unwrap(),
         ]);
+
+    let test = ResolvedOverwatchMatch::from_id(1, &state.pool).await;
+    let (transmitter, mut receiver) = mpsc::unbounded_channel::<ResolvedOverwatchMatch>();
 
     let app: Router = Router::new()
         // User-facing
@@ -167,7 +187,7 @@ async fn main() {
         .route("/api/join_queue", post(join_queue))
         .route("/api/leave_queue", post(leave_queue))
         // Websockets..?
-        // .route("/ws/notifications", get(ws_handler))
+        .route("/ws/notifications", get(wshandler))
         .layer(cors)
         .with_state(state.clone());
 
@@ -176,78 +196,3 @@ async fn main() {
         .await
         .unwrap();
 }
-
-// async fn ws_handler(
-//     ws: WebSocketUpgrade,
-//     // Don't think I give a shit about user-agent in the context of websockets.
-//     user_agent: Option<TypedHeader<headers::UserAgent>>,
-//     State(state): State<CarnyState>,
-//     ConnectInfo(addr): ConnectInfo<SocketAddr>,
-// ) -> impl IntoResponse {
-//
-//     ws.on_upgrade(move |socket| client_handler(socket, addr, state.pool))
-// }
-//
-// async fn ws_send(
-//     mut socket: WebSocket,
-//     message: &str
-// ) -> Result<WebSocket, axum::Error> {
-//
-//     // Feel like cloning socket might be a bad idea?
-//     match socket.send(Message::Text(message.to_string())).await {
-//         Ok(_)  => return Ok(socket),
-//         Err(e) => return Err(e)
-//     }
-// }
-//
-// async fn client_handler(
-//     mut socket: WebSocket,
-//     client: SocketAddr,
-//     pool: SqlitePool
-// ) {
-//     if socket.send(Message::Ping(vec![1, 2, 3])).await.is_ok() {
-//         println!("ping good -> {client}");
-//         socket = ws_send(socket, "oqijweqiowej").await.unwrap();
-//     } else {
-//         println!("could not ping {client}");
-//         return;
-//     }
-//
-//     // socket.recv is surely blocking, no?
-//     // For just this client I'd imagine.
-//     if let Some(msg) = socket.recv().await {
-//         if let Ok(msg) = msg {
-//             while process_message(&msg, client).is_continue() {
-//                 println!("{:#?}", msg);
-//             }
-//         } else {
-//             println!("no recv");
-//             return;
-//         }
-//     }
-// }
-//
-// fn process_message(msg: &Message, client: SocketAddr) -> ControlFlow<(), ()> {
-//     match msg {
-//         Message::Text(t) => {
-//             println!("{client}: {t:?}");
-//         }
-//         Message::Binary(d) => {
-//             println!("{client}: {:?} ({})", d, d.len());
-//         }
-//         Message::Close(c) => {
-//             if let Some(cf) = c {
-//                 println!("{client} close with reason {:#?}", cf.reason);
-//                 return ControlFlow::Break(());
-//             }
-//         }
-//         Message::Pong(v) => {
-//             println!("{client} pong {v:?}");
-//         }
-//         Message::Ping(v) => {
-//             println!("{client} ping {v:#?}")
-//         }
-//     }
-//
-//     ControlFlow::Continue(())
-// }

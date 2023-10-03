@@ -21,11 +21,6 @@ pub async fn create(connection: &SocketAddr, user_id: i32, pool: &SqlitePool) ->
     // (This means we can't use a whole ass UUID as the hmac. Dang!)
 
     let mut unique_hmac = rand_str();
-    // if !cfg!(debug_assertions) {
-        
-    // }
-
-    // TODO: This can panic >_<
 
     // For generated test account (see database_inator.sh)
     let mut remote_addr = String::from("127.0.0.1");
@@ -83,7 +78,7 @@ pub async fn delete_by_user_id(
         .await
 }
 
-/// Flips byte for colum `is_valid`.
+/// Flips byte for column `is_valid`.
 pub async fn set_invalid(
     user_id: i32,
     invalidation_source: &str,
@@ -98,7 +93,11 @@ pub async fn set_invalid(
     .await
 }
 
-pub async fn validate(connection: &SocketAddr, user_id: i32, pool: &SqlitePool) -> Option<String> {
+pub async fn validate(
+    connection: &SocketAddr,
+    user_id: i32,
+    pool: &SqlitePool,
+) -> Option<SessionToken> {
     if let Some(token) = token_by_user_id(user_id, pool).await {
         // Get remote addr without port
         if let Ok(remotes_match) = verify_password(
@@ -116,17 +115,18 @@ pub async fn validate(connection: &SocketAddr, user_id: i32, pool: &SqlitePool) 
                 }
                 return None;
             }
-            return Some(token.token);
+            return Some(token);
         }
     }
     None
 }
 
-pub fn token_from_cookies(cookies: &Cookie) -> Option<String> {
+pub fn token_from_cookies(cookies: &Cookie) -> Option<SessionToken> {
     let session_option = cookies.get("session_id");
     if session_option.is_none() {
         return None;
     }
-    let token = &session_option.unwrap()["Bearer ".len()..].to_string();
-    Some(token.to_string())
+    let session = serde_json::from_str(session_option.unwrap()).unwrap();
+    // let token = &session_option.unwrap()["Bearer ".len()..].to_string();
+    Some(session)
 }

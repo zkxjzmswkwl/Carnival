@@ -117,7 +117,6 @@ pub async fn login(
 
     if verify_password(password, &user.password, HMAC_KEY).unwrap() {
         // checks to see if the requesting user has a valid token already.
-
         let needs_token = session::token_by_user_id(user.id, &state.pool)
             .await
             .is_none();
@@ -151,11 +150,20 @@ pub async fn login(
                 *r.status_mut() = StatusCode::OK;
                 *r.body_mut() = Full::from(format!("<script>{}</script>", redirect_js));
 
+                let cookies_json = serde_json::to_string(&session).unwrap().to_string();
                 r.headers_mut().insert(
                     "Set-Cookie",
-                    HeaderValue::from_str(static_format!("session_id=Bearer {};path=/;", session))
-                        .unwrap(),
+                    HeaderValue::from_str(static_format!(
+                        "session_id={};path=/;",
+                        cookies_json,
+                    ))
+                    .unwrap(),
                 );
+                // who u be men?
+                // r.headers_mut().insert(
+                //     "Set-Cookie",
+                //     HeaderValue::from_str(static_format!("whoyoube={};path=/;", user.id)).unwrap(),
+                // );
             }
             // If it has, we get very upset and tell the client that their actions are
             // "NOT_ACCEPTABLE".
