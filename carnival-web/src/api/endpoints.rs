@@ -16,17 +16,17 @@ use axum::{
 };
 use easy_password::bcrypt::verify_password;
 use headers::Cookie;
-use http::{HeaderValue, StatusCode};
+use http::{HeaderValue, StatusCode, HeaderMap};
 use static_str_ops::static_format;
 
 use super::payloads::{JoinQueueInput, LeaveQueueInput};
 
 async fn validate_session_cookie(
     user_id: i32,
-    connection: &SocketAddr,
+    ip: &str,
     state: &CarnyState,
 ) -> bool {
-    match session::validate(&connection, user_id, &state.pool).await {
+    match session::validate(ip, user_id, &state.pool).await {
         Some(_) => return true,
         None => return false,
     }
@@ -95,11 +95,17 @@ pub async fn register(
 
 #[axum_macros::debug_handler]
 pub async fn login(
-    ConnectInfo(connection): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
     State(state): State<CarnyState>,
     Json(post_data): Json<LoginInput>,
 ) -> Response<Full<Bytes>> {
     let mut r: Response<Full<Bytes>> = Response::new(Full::from("nil"));
+
+    let mut remote_addr = String::from("127.0.0.2");
+    if let Some(addr_header_val) = headers.get("x-real-ip") {
+        // cant be fucked right now.
+        remote_addr = addr_header_val.to_str().unwrap().to_string();
+    }
 
     let username: &str = &post_data.username;
     let password: &str = &post_data.password;
@@ -122,7 +128,7 @@ pub async fn login(
             .is_none();
         // If they don't, create one.
         if needs_token {
-            let session_option = session::create(&connection, user.id, &state.pool).await;
+            let session_option = session::create(&remote_addr, user.id, &state.pool).await;
             // This would suck.
             if session_option.is_none() {
                 *r.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
@@ -141,7 +147,9 @@ pub async fn login(
         //      invoked prior to execution on any endpoint route that is denoted
         //      to require authorization.
         //
-        match session::validate(&connection, user.id, &state.pool).await {
+
+
+        match session::validate(&remote_addr, user.id, &state.pool).await {
             // If it hasn't, cool. Set the cookie and be done with it.
             Some(session) => {
                 let redirect_js = fs::read_to_string("js/redirect_login.js")
@@ -182,14 +190,22 @@ pub async fn login(
 }
 
 pub async fn join_queue(
+    headers: HeaderMap,
     ConnectInfo(connection): ConnectInfo<SocketAddr>,
     TypedHeader(cookies): TypedHeader<Cookie>,
     State(state): State<CarnyState>,
     Json(post_data): Json<JoinQueueInput>,
 ) -> (StatusCode, String) {
+
+    let mut remote_addr = String::from("");
+    if let Some(addr_header_val) = headers.get("x-real-ip") {
+        // cant be fucked right now.
+        remote_addr = addr_header_val.to_str().unwrap().to_string();
+    }
+
     let queue_id_i32: i32 = post_data.queue_id.parse().unwrap_or_default();
     if let Some(requesting_user) = user::from_cookies(&cookies, &state.pool).await {
-        if !validate_session_cookie(requesting_user.id, &connection, &state).await {
+        if !validate_session_cookie(requesting_user.id, &remote_addr, &state).await {
             return (
                 StatusCode::NOT_ACCEPTABLE,
                 "Detected some funky stuff. Token invalidated.".to_string(),
@@ -224,18 +240,26 @@ pub async fn join_queue(
 
 #[axum_macros::debug_handler]
 pub async fn leave_queue(
-    ConnectInfo(connection): ConnectInfo<SocketAddr>,
+    // ConnectInfo(connection): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
     TypedHeader(cookies): TypedHeader<Cookie>,
     State(state): State<CarnyState>,
     Json(post_data): Json<LeaveQueueInput>,
 ) -> (StatusCode, String) {
+
+    let mut remote_addr = String::from("");
+    if let Some(addr_header_val) = headers.get("x-real-ip") {
+        // cant be fucked right now.
+        remote_addr = addr_header_val.to_str().unwrap().to_string();
+    }
+
     // TODO: This has no error handling.
     // All that can be used to determine if something's gone wrong
     // here, is the fact that `queue::delete_user_from_queue` calls `eprintln!`.
     // You're welcome 😎
     let queue_id_i32: i32 = post_data.queue_id.parse().unwrap_or_default();
     if let Some(requesting_user) = user::from_cookies(&cookies, &state.pool).await {
-        if !validate_session_cookie(requesting_user.id, &connection, &state).await {
+        if !validate_session_cookie(requesting_user.id, &remote_addr, &state).await {
             return (
                 StatusCode::NOT_ACCEPTABLE,
                 "Detected some funky stuff. Token invalidated.".to_string(),
