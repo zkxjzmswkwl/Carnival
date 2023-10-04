@@ -2,8 +2,6 @@ use sqlx::{SqlitePool, sqlite::SqliteQueryResult};
 
 use crate::db::services::overwatch_match::create_match;
 
-use super::overwatch_match::ResolvedOverwatchMatch;
-
 pub async fn is_queued(
     queue_id: i32,
     username: &str,

@@ -3,7 +3,6 @@ use std::{sync::mpsc, thread};
 use crate::{
     commons::types::ResolvedOverwatchMatch,
     config::Config,
-    overwatch::dyn_actions::DynamicActionChain,
 };
 use overwatch::state_handler::StateHandler;
 use tracing_subscriber::filter::LevelFilter;
