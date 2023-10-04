@@ -75,7 +75,7 @@ pub async fn register(
 
     match user::create_user(username, password, battletag, role, &state.pool).await {
         Ok(_) => {
-            let redirect_js = fs::read_to_string("js/redirect_register.js")
+            let redirect_js = fs::read_to_string("static/js/redirect_register.js")
                 .unwrap_or("User created. Error redirecting.".to_string());
 
             (
@@ -150,7 +150,7 @@ pub async fn login(
         match session::validate(&remote_addr, user.id, &state.pool).await {
             // If it hasn't, cool. Set the cookie and be done with it.
             Some(session) => {
-                let redirect_js = fs::read_to_string("js/redirect_login.js")
+                let redirect_js = fs::read_to_string("static/js/redirect_login.js")
                     .unwrap_or("User created. Error redirecting.".to_string());
 
                 *r.status_mut() = StatusCode::OK;
