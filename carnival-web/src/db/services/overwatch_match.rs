@@ -1,20 +1,25 @@
-use sqlx::{SqlitePool, sqlite::SqliteQueryResult};
+use serde::Serialize;
+use sqlx::{sqlite::SqliteQueryResult, SqlitePool};
 
-use crate::db::{models::{OverwatchMatch, OverwatchMatchPlayer}, services::queue::delete_user_from_queue};
+use crate::db::{
+    models::{OverwatchMatch, OverwatchMatchPlayer},
+    services::queue::delete_user_from_queue,
+};
 
 #[allow(dead_code)]
 pub async fn create_map(
     map_name: &str,
     map_mode: &str,
-    pool: &SqlitePool
+    pool: &SqlitePool,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
-
-    sqlx::query("INSERT INTO overwatch_maps (name, mode)
-        VALUES ($1, $2);")
-        .bind(map_name)
-        .bind(map_mode)
-        .execute(pool)
-        .await
+    sqlx::query(
+        "INSERT INTO overwatch_maps (name, mode)
+        VALUES ($1, $2);",
+    )
+    .bind(map_name)
+    .bind(map_mode)
+    .execute(pool)
+    .await
 }
 
 #[allow(dead_code)]
@@ -22,9 +27,8 @@ pub async fn create_match(
     map_id: i32,
     blue_team: &Vec<i32>,
     red_team: &Vec<i32>,
-    pool: &SqlitePool
+    pool: &SqlitePool,
 ) -> Result<i32, sqlx::Error> {
-
     // Because we should **never** be inserting rows into the
     // `overwatch_match_players` table for **any other reason**.
     // If you do, you die ingame. 🔫🔫
@@ -32,30 +36,34 @@ pub async fn create_match(
         user_id: &i32,
         match_id: &i32,
         team: u8,
-        pool: &SqlitePool
+        pool: &SqlitePool,
     ) -> Result<SqliteQueryResult, sqlx::Error> {
-
-        sqlx::query("
+        sqlx::query(
+            "
             INSERT INTO overwatch_match_players (user_id, match_id, team_id)
-            VALUES ($1, $2, $3)")
-            .bind(user_id)
-            .bind(match_id)
-            .bind(team)
-            .execute(pool)
-            .await
+            VALUES ($1, $2, $3)",
+        )
+        .bind(user_id)
+        .bind(match_id)
+        .bind(team)
+        .execute(pool)
+        .await
     }
 
     // Insert match before inserting thru rows for players
-    let match_result = sqlx::query("
+    let match_result = sqlx::query(
+        "
         INSERT INTO overwatch_match (map_id)
-        VALUES ($1);")
-        .bind(map_id)
-        .execute(pool)
-        .await;
+        VALUES ($1);",
+    )
+    .bind(map_id)
+    .execute(pool)
+    .await;
 
-    let latest_match_result = sqlx::query!(
-        "SELECT id FROM (select (1) as id) overwatch_match ORDER BY id DESC LIMIT 1"
-    ).fetch_one(pool).await;
+    let latest_match_result =
+        sqlx::query!("SELECT id FROM (select (1) as id) overwatch_match ORDER BY id DESC LIMIT 1")
+            .fetch_one(pool)
+            .await;
 
     match latest_match_result {
         Ok(new_match) => {
@@ -63,48 +71,46 @@ pub async fn create_match(
                 match insert_match_player(player_id, &new_match.id, 1, pool).await {
                     // TODO: Only support 1 queue at the moment.
                     Ok(_) => delete_user_from_queue(&1, player_id, pool).await,
-                    Err(e) => eprintln!("{e}")
+                    Err(e) => eprintln!("{e}"),
                 }
             }
             for player_id in red_team.iter() {
                 match insert_match_player(player_id, &new_match.id, 2, pool).await {
                     // TODO: Only support 1 queue at the moment.
                     Ok(_) => delete_user_from_queue(&1, player_id, pool).await,
-                    Err(e) => eprintln!("{e}")
+                    Err(e) => eprintln!("{e}"),
                 }
             }
             Ok(new_match.id)
-        },
-        Err(e) => Err(e)
-
+        }
+        Err(e) => Err(e),
     }
 }
 
-pub async fn get_match_by_id(
-    id: i32,
-    pool: &SqlitePool
-) -> Result<OverwatchMatch, sqlx::Error> {
-    sqlx::query_as::<_, OverwatchMatch>( 
-        "SELECT * FROM overwatch_match WHERE id = $1"
-    ).bind(id).fetch_one(pool).await
+pub async fn get_match_by_id(id: i32, pool: &SqlitePool) -> Result<OverwatchMatch, sqlx::Error> {
+    sqlx::query_as::<_, OverwatchMatch>("SELECT * FROM overwatch_match WHERE id = $1")
+        .bind(id)
+        .fetch_one(pool)
+        .await
 }
 
 #[allow(dead_code)]
 pub async fn get_match_players(
     match_id: i32,
-    pool: &SqlitePool
+    pool: &SqlitePool,
 ) -> Result<Vec<OverwatchMatchPlayer>, sqlx::Error> {
-
-    sqlx::query_as::<_, OverwatchMatchPlayer>("SELECT * FROM overwatch_match_players WHERE match_id = $1")
-        .bind(match_id)
-        .fetch_all(pool)
-        .await
+    sqlx::query_as::<_, OverwatchMatchPlayer>(
+        "SELECT * FROM overwatch_match_players WHERE match_id = $1",
+    )
+    .bind(match_id)
+    .fetch_all(pool)
+    .await
 }
 
-#[derive(Default, Debug)]
+#[derive(Serialize, Clone, Default, Debug)]
 pub struct ResolvedTeams {
     blue: Vec<String>,
-    red: Vec<String>
+    red: Vec<String>,
 }
 impl ResolvedTeams {
     // These shouldn't be vectors of strings
@@ -114,37 +120,27 @@ impl ResolvedTeams {
     }
 
     /// Intended for retrieving data to display.
-    pub async fn for_match(
-        ow_match_id: i32,
-        pool: &SqlitePool
-    ) -> Self {
-
+    pub async fn for_match(ow_match_id: i32, pool: &SqlitePool) -> Self {
         let mut ret = ResolvedTeams::default();
-        let blue: Vec<String> = sqlx::query_file_scalar_unchecked!(
-            "sql/resolve_match.sql",
-            ow_match_id,
-            1
-        )
-        .fetch_all(pool)
-        .await
-        .unwrap_or_else(|err| {
-            eprintln!("{err}");
-            // :(
-            vec![":(".to_string()]
-        });
+        let blue: Vec<String> =
+            sqlx::query_file_scalar_unchecked!("sql/resolve_match.sql", ow_match_id, 1)
+                .fetch_all(pool)
+                .await
+                .unwrap_or_else(|err| {
+                    eprintln!("{err}");
+                    // :(
+                    vec![":(".to_string()]
+                });
 
-        let red: Vec<String> = sqlx::query_file_scalar_unchecked!(
-            "sql/resolve_match.sql",
-            ow_match_id,
-            1
-        )
-        .fetch_all(pool)
-        .await
-        .unwrap_or_else(|err| {
-            eprintln!("{err}");
-            // :(
-            vec![":(".to_string()]
-        });
+        let red: Vec<String> =
+            sqlx::query_file_scalar_unchecked!("sql/resolve_match.sql", ow_match_id, 1)
+                .fetch_all(pool)
+                .await
+                .unwrap_or_else(|err| {
+                    eprintln!("{err}");
+                    // :(
+                    vec![":(".to_string()]
+                });
 
         ret.blue = blue;
         ret.red = red;
@@ -156,32 +152,37 @@ impl ResolvedTeams {
 pub async fn get_team(
     match_id: i32,
     team_id: u8,
-    pool: &SqlitePool
+    pool: &SqlitePool,
 ) -> Result<Vec<OverwatchMatchPlayer>, sqlx::Error> {
-
-   sqlx::query_file_as_unchecked!(
+    sqlx::query_file_as_unchecked!(
         OverwatchMatchPlayer,
         "sql/players_by_team_match.sql",
-        match_id,team_id
+        match_id,
+        team_id
     )
     .fetch_all(pool)
     .await
 }
 
-#[derive(Default, Debug)]
+#[derive(Serialize, Clone, Default, Debug)]
 pub struct ResolvedOverwatchMatch {
     pub overwatch_match: OverwatchMatch,
-    pub resolved_teams: ResolvedTeams
+    pub resolved_teams: ResolvedTeams,
 }
 
 impl ResolvedOverwatchMatch {
     #[allow(dead_code)]
     pub async fn from_id(ow_match_id: i32, pool: &SqlitePool) -> Self {
-        let overwatch_match = get_match_by_id(ow_match_id, pool).await.unwrap_or_else(|err| {
-            eprintln!("{err}");
-            return OverwatchMatch::default();
-        });
+        let overwatch_match = get_match_by_id(ow_match_id, pool)
+            .await
+            .unwrap_or_else(|err| {
+                eprintln!("{err}");
+                return OverwatchMatch::default();
+            });
         let resolved_teams = ResolvedTeams::for_match(ow_match_id, pool).await;
-        Self { overwatch_match, resolved_teams }
+        Self {
+            overwatch_match,
+            resolved_teams,
+        }
     }
 }
