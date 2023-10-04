@@ -80,3 +80,18 @@ pub async fn profile_route(
         ),
     ))
 }
+
+pub async fn settings_route(
+    State(state): State<CarnyState>,
+    Path(settings_subroute): Path<String>,
+    TypedHeader(cookies): TypedHeader<Cookie>,
+) -> Html<String> {
+    Html(base(&state.pool, &cookies).await.replace(
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        &format!(
+            r###"<div hx-get="{}/components/settings/{}" hx-trigger="load" hx-target="#app""></div>"###,
+            DOMAIN,
+            settings_subroute
+        ),
+    ))
+}

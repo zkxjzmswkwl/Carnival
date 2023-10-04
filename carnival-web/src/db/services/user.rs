@@ -76,6 +76,7 @@ pub async fn does_battletag_exist(battletag: &str, pool: &SqlitePool) -> bool {
 
 pub struct LeaderboardEntry {
     pub username: String,
+    pub battletag: String,
     pub role: String,
     pub rating: i32,
     pub wins: i32,
@@ -140,7 +141,6 @@ pub async fn by_token(session_token: &SessionToken, pool: &SqlitePool) -> Option
             .await;
     match user_result {
         Ok(user) => {
-            println!("{:#?}", user);
             Some(user)
         }
         Err(e) => {
@@ -156,9 +156,17 @@ pub async fn from_cookies(cookies: &Cookie, pool: &SqlitePool) -> Option<User> {
     println!("{:#?}", cookies);
     if let Some(session_token_option) = token_from_cookies(cookies) {
         if let Some(user) = by_token(&session_token_option, pool).await {
-            println!("{:#?}", user);
             return Some(user);
         }
     }
     return None;
+}
+
+pub async fn update_settings(user_id: i32, battletag: &str, role: &str, pool: &SqlitePool) {
+    let query =
+        sqlx::query_file!("sql/settings_user_update.sql", role, battletag, user_id).execute(pool).await;
+    match query {
+        Ok(o) => eprintln!("{:#?}", o),
+        Err(e) => eprintln!("{e}")
+    }
 }

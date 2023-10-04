@@ -19,7 +19,7 @@ use headers::Cookie;
 use http::{HeaderValue, StatusCode, HeaderMap};
 use static_str_ops::static_format;
 
-use super::payloads::{JoinQueueInput, LeaveQueueInput};
+use super::payloads::{JoinQueueInput, LeaveQueueInput, UpdateSettingsInput};
 
 async fn validate_session_cookie(
     user_id: i32,
@@ -101,7 +101,7 @@ pub async fn login(
 ) -> Response<Full<Bytes>> {
     let mut r: Response<Full<Bytes>> = Response::new(Full::from("nil"));
 
-    let mut remote_addr = String::from("127.0.0.2");
+    let mut remote_addr = String::from("127.0.0.1");
     if let Some(addr_header_val) = headers.get("x-real-ip") {
         // cant be fucked right now.
         remote_addr = addr_header_val.to_str().unwrap().to_string();
@@ -147,8 +147,6 @@ pub async fn login(
         //      invoked prior to execution on any endpoint route that is denoted
         //      to require authorization.
         //
-
-
         match session::validate(&remote_addr, user.id, &state.pool).await {
             // If it hasn't, cool. Set the cookie and be done with it.
             Some(session) => {
@@ -273,4 +271,27 @@ pub async fn leave_queue(
         );
     }
     (StatusCode::OK, "Uhoh".to_string())
+}
+
+#[axum_macros::debug_handler]
+pub async fn save_settings(
+    headers: HeaderMap,
+    State(state): State<CarnyState>,
+    TypedHeader(cookies): TypedHeader<Cookie>,
+    Json(post_data): Json<UpdateSettingsInput>,
+) -> (StatusCode, String) {
+    let mut remote_addr = String::from("");
+    if let Some(addr_header_val) = headers.get("x-real-ip") {
+        // cant be fucked right now.
+        remote_addr = addr_header_val.to_str().unwrap().to_string();
+    }
+
+    if let Some(requesting_user) = user::from_cookies(&cookies, &state.pool).await {
+        println!("{:#?}", requesting_user);
+        let battletag: &str = &post_data.battletag;
+        let role: &str = &post_data.role;
+        user::update_settings(requesting_user.id, battletag, role, &state.pool).await;
+        return (StatusCode::OK, String::from("Updated"));
+    }
+    return (StatusCode::BAD_REQUEST, String::from("no"));
 }

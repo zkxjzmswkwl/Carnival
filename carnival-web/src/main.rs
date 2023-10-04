@@ -2,7 +2,7 @@
 extern crate dotenv_codegen;
 
 use crate::db::queries::tables;
-use api::endpoints::{join_queue, leave_queue, login, register};
+use api::endpoints::{join_queue, leave_queue, login, register, save_settings};
 use axum::{
     extract::ws::{Message, WebSocket, WebSocketUpgrade},
     extract::State,
@@ -11,12 +11,12 @@ use axum::{
     routing::{get, post},
     Router, Server,
 };
-use db::services::overwatch_match::ResolvedOverwatchMatch;
+use db::services::{overwatch_match::ResolvedOverwatchMatch, user::update_settings};
 use futures::{stream::StreamExt, SinkExt};
 use http::{HeaderName, Method};
-use rendering::components::{
-    hero, leaderboard_comp, login_form, profile_comp, queue_table, queue_user_panel, register_form,
-};
+use rendering::{components::{
+    hero, leaderboard_comp, login_form, profile_comp, queue_table, queue_user_panel, register_form, settings_user,
+}, routes::settings_route};
 use rendering::routes::{
     index, leaderboard_route, login_route, profile_route, queue_route, register_route,
 };
@@ -166,6 +166,7 @@ async fn main() {
         .route("/", get(index))
         .route("/login", get(login_route))
         .route("/register", get(register_route))
+        .route("/settings/:settings_subroute", get(settings_route))
         .route("/queue", get(queue_route))
         .route("/play", get(queue_route))
         .route("/leaderboard", get(leaderboard_route))
@@ -177,6 +178,7 @@ async fn main() {
         .route("/components/leaderboard", get(leaderboard_comp))
         .route("/components/queue_table", get(queue_table))
         .route("/components/profile/:username", get(profile_comp))
+        .route("/components/settings/:settings_subroute", get(settings_user))
         .route(
             "/components/queue_user_table/:username",
             get(queue_user_panel),
@@ -186,6 +188,7 @@ async fn main() {
         .route("/api/login", post(login))
         .route("/api/join_queue", post(join_queue))
         .route("/api/leave_queue", post(leave_queue))
+        .route("/api/settings_user", post(save_settings))
         // Websockets..?
         .route("/ws/notifications", get(wshandler))
         .layer(cors)
