@@ -1,25 +1,31 @@
-use std::{fs, net::SocketAddr};
+use std::fs;
 
 use crate::db::services::queue::pop_queue;
-use crate::db::services::session_token as session;
+use crate::db::services::{session_token as session, password_reset_token};
 use crate::{
     api::payloads::{LoginInput, RegisterInput},
     db::services::{queue, user},
     rendering::components::build_queue_comp,
     CarnyState, HMAC_KEY,
 };
+use axum::response::IntoResponse;
 use axum::{
     body::{Bytes, Full},
-    extract::{ConnectInfo, State},
+    extract::State,
     response::Response,
     Json, TypedHeader,
 };
+use chrono::{Utc, Duration};
 use easy_password::bcrypt::verify_password;
 use headers::Cookie;
 use http::{HeaderValue, StatusCode, HeaderMap};
+use lettre::{Message, SmtpTransport, Transport};
+use lettre::message::header::ContentType;
+use lettre::transport::smtp::authentication::Credentials;
 use static_str_ops::static_format;
+use uuid::Uuid;
 
-use super::payloads::{JoinQueueInput, LeaveQueueInput, UpdateSettingsInput};
+use super::payloads::{JoinQueueInput, LeaveQueueInput, UpdateSettingsInput, ForgotPasswordInput, ResetPasswordInput};
 
 async fn validate_session_cookie(
     user_id: i32,
@@ -36,11 +42,9 @@ pub async fn register(
     State(state): State<CarnyState>,
     Json(post_data): Json<RegisterInput>,
 ) -> (StatusCode, String) {
-    // NOTE(aalhendi): is this needed?
-    // NOTE(Carter): It's for clarity - putting 40 bytes on the stack
-    // doesn't matter.
     let username: &str = &post_data.username;
     let battletag: &str = &post_data.battletag;
+    let email: &str = &post_data.email;
     let role: &str = &post_data.role;
     let password: &str = &post_data.password;
     let password_conf: &str = &post_data.password_conf;
@@ -73,7 +77,15 @@ pub async fn register(
         );
     }
 
-    match user::create_user(username, password, battletag, role, &state.pool).await {
+    
+    if user::does_email_exist(email, &state.pool).await {
+        return (
+            StatusCode::BAD_REQUEST,
+            "Email already exists".to_string(),
+        );
+    }
+
+    match user::create_user(username, password, battletag, email, role, &state.pool).await {
         Ok(_) => {
             let redirect_js = fs::read_to_string("static/js/redirect_register.js")
                 .unwrap_or("User created. Error redirecting.".to_string());
@@ -185,6 +197,94 @@ pub async fn login(
     *r.status_mut() = StatusCode::BAD_REQUEST;
     *r.body_mut() = Full::from("Incorrect username or password");
     r
+}
+
+pub async fn forgot_password(
+    State(state): State<CarnyState>,
+    Json(post_data): Json<ForgotPasswordInput>,
+) -> impl IntoResponse {
+    // TODO(aalhendi): Validate email. Garde crate (https://github.com/jprochazk/garde) <- plug for the homie
+
+    let maybe_user = user::user_by_email(&post_data.email, &state.pool).await;
+    let user_id = match maybe_user {
+        Ok(u) => u.id,
+        Err(_) => todo!("Handle error silently, maybe return to user 'we sent a reset email if it exists in records'"),
+    };
+
+    let token = Uuid::new_v4().to_string();
+
+    let expires_at = (Utc::now() + Duration::hours(2)).timestamp();
+    // TODO(aalhendi): handle err maybe? HTTP 500
+    password_reset_token::store_token(user_id, &token, expires_at, &state.pool).await;
+
+    send_email(&post_data.email, &token).await; 
+    (StatusCode::OK, "Email will be sent if it exists in records :)")
+}
+
+pub async fn reset_password(
+    State(state): State<CarnyState>,
+    Json(post_data): Json<ResetPasswordInput>,
+) -> impl IntoResponse {
+    let token = &post_data.token;
+    let new_password = &post_data.new_password;
+
+    match password_reset_token::validate_token(token, &state.pool).await {
+        Ok(Some(user_id)) => {
+            match password_reset_token::update_password(user_id, new_password, &state.pool).await {
+                Ok(_) => {
+                    password_reset_token::delete_token(token, &state.pool)
+                        .await
+                        .expect("Failed to delete token");
+                    return (StatusCode::OK, "Password updated".to_string());
+                }
+                Err(_) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Failed to update password".to_string(),
+                    )
+                }
+            }
+        }
+        Ok(None) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                "Invalid or expired token".to_string(),
+            )
+        }
+        Err(_) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "An error occurred".to_string(),
+            )
+        }
+    }
+}
+
+// TODO(aalhendi): actually implement. this is literally the example on github modified...
+// lettre (https://github.com/lettre/lettre)
+async fn send_email(recipient_email: &str, token: &str) {
+    let email = Message::builder()
+        .from("no-reply@yourdomain.com".parse().unwrap())
+        .from(recipient_email.parse().unwrap())
+        .subject("Carnival Password Reset")
+        .header(ContentType::TEXT_PLAIN)
+        .body(format!("Here is your password reset token: {}", token))
+        .unwrap();
+
+
+    let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
+
+    // Open a remote connection to gmail
+    let mailer = SmtpTransport::relay("smtp.gmail.com")
+        .unwrap()
+        .credentials(creds)
+        .build();
+
+    // Send the email
+    match mailer.send(&email) {
+        Ok(_) => println!("Email sent successfully!"),
+        Err(e) => panic!("Could not send email: {e:?}"),
+    }
 }
 
 pub async fn join_queue(

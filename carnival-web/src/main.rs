@@ -2,7 +2,7 @@
 extern crate dotenv_codegen;
 
 use crate::db::queries::tables;
-use api::endpoints::{join_queue, leave_queue, login, register, save_settings};
+use api::endpoints::{join_queue, leave_queue, login, register, save_settings, forgot_password, reset_password};
 use axum::{
     extract::ws::{Message, WebSocket, WebSocketUpgrade},
     extract::State,
@@ -22,7 +22,6 @@ use rendering::routes::{
 };
 use sqlx::{migrate::MigrateDatabase, Sqlite, SqlitePool};
 use std::{env, net::SocketAddr};
-use tokio::sync::mpsc;
 use tower_http::cors::{Any, CorsLayer};
 
 mod api;
@@ -90,6 +89,15 @@ async fn create_tables(pool: &SqlitePool) {
     println!(
         "Queued Players table creation -> {:?}",
         create_queued_players_result
+    );
+
+    let create_password_reset_token_result = sqlx::query(&tables::CREATE_QUEUED_PLAYERS)
+    .execute(pool)
+    .await
+    .unwrap();
+    println!(
+        "Password Reset Token table creation -> {:?}",
+         create_password_reset_token_result
     );
 }
 
@@ -188,6 +196,7 @@ async fn main() {
         .route("/", get(index))
         .route("/login", get(login_route))
         .route("/register", get(register_route))
+        // TODO(aalhendi): build forgot pw page...
         .route("/settings/:settings_subroute", get(settings_route))
         .route("/queue", get(queue_route))
         .route("/play", get(queue_route))
@@ -208,6 +217,8 @@ async fn main() {
         // Endpoints
         .route("/api/register", post(register))
         .route("/api/login", post(login))
+        .route("/api/forgot-password", post(forgot_password))
+        .route("/api/reset-password/", post(reset_password))
         .route("/api/join_queue", post(join_queue))
         .route("/api/leave_queue", post(leave_queue))
         .route("/api/settings_user", post(save_settings))
