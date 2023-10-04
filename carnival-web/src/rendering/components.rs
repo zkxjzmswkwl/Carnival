@@ -129,6 +129,7 @@ pub async fn leaderboard_comp(State(state): State<CarnyState>) -> String {
         for entry in leaderboard_result.unwrap() {
             rows.push_str(&utils::generate_table_row(&[
                 &entry.username,
+                &entry.battletag,
                 &format!("{}", entry.rating),
                 &format!("{}", entry.wins),
                 &format!("{}", entry.losses),
@@ -151,29 +152,28 @@ pub async fn leaderboard_comp(State(state): State<CarnyState>) -> String {
 }
 
 pub async fn base(pool: &SqlitePool, cookies: &Cookie) -> String {
-    let authed_items = ["Leaderboard", "Play", "Settings"];
-    let noauth_items = ["Leaderboard", "Register", "Login"];
+    let authed_items = [("Leaderboard", "leaderboard"), ("Play", "play"), ("Settings", "settings/user")];
+    let noauth_items = [("Leaderboard", "leaderboard"), ("Register", "register"), ("Login", "login")];
 
     let user_option = user::from_cookies(&cookies, pool).await;
     let user = user_option.unwrap_or_default();
-    println!("{:#?}", user);
 
     let mut header_list: String = String::new();
 
     if user.id == 0 {
         for item in noauth_items {
             header_list.push_str(&format!(
-                "<li><a href=\"{}\">{}</a></li>",
-                item.to_lowercase(),
-                item
+                "<li><a href=\"/{}\">{}</a></li>",
+                item.1,
+                item.0
             ))
         }
     } else {
         for item in authed_items {
             header_list.push_str(&format!(
-                "<li><a href=\"{}\">{}</a></li>",
-                item.to_lowercase(),
-                item
+                "<li><a href=\"/{}\">{}</a></li>",
+                item.1,
+                item.0
             ))
         }
     }
@@ -265,6 +265,16 @@ pub async fn profile_comp(Path(username): Path<String>, State(state): State<Carn
                 "queue_button_",
                 &queue_button(is_queued(1, &username, &state.pool).await),
             ),
+        ],
+    )
+}
+
+pub async fn settings_user() -> String {
+    utils::load_file_replace_shit(
+        "html/settings_user.html",
+        &[
+            ("domain_", DOMAIN),
+            (">//<", &animations::animated_header("User Settings")),
         ],
     )
 }
