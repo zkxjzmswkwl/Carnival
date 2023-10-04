@@ -194,7 +194,7 @@ pub async fn join_queue(
     Json(post_data): Json<JoinQueueInput>,
 ) -> (StatusCode, String) {
 
-    let mut remote_addr = String::from("");
+    let mut remote_addr = String::from("127.0.0.1");
     if let Some(addr_header_val) = headers.get("x-real-ip") {
         // cant be fucked right now.
         remote_addr = addr_header_val.to_str().unwrap().to_string();
