@@ -25,7 +25,7 @@ mod animations {
         let event_listener_head: &'static str =
             "document.addEventListener(\"htmx:afterOnLoad\", () => {";
 
-        let file_contents = fs::read_to_string("js/table_domino.js")
+        let file_contents = fs::read_to_string("static/js/table_domino.js")
             .unwrap_or("<script>console.log('ruhroh disk boom')".to_string());
 
         if event_htmx_afterload {
@@ -40,7 +40,7 @@ mod animations {
     }
 
     pub fn animated_header(header_text: &str) -> String {
-        utils::load_file_replace_shit("js/header_domino.js", &[("^.^", header_text)])
+        utils::load_file_replace_shit("static/js/header_domino.js", &[("^.^", header_text)])
     }
 }
 
@@ -78,8 +78,8 @@ mod utils {
 
 fn queue_button(is_queued: bool) -> String {
     match is_queued {
-        true => utils::read_to_fucking_string("html/queue_button_queued.html"),
-        false => utils::read_to_fucking_string("html/queue_button_notqueued.html"),
+        true => utils::read_to_fucking_string("static/html/queue_button_queued.html"),
+        false => utils::read_to_fucking_string("static/html/queue_button_notqueued.html"),
     }
 }
 
@@ -104,7 +104,7 @@ pub async fn hero() -> &'static str {
 
 pub async fn register_form() -> String {
     utils::load_file_replace_shit(
-        "html/register.html",
+        "static/html/register.html",
         &[
             ("domain_", DOMAIN),
             (">//<", &animations::animated_header("Register")),
@@ -114,7 +114,7 @@ pub async fn register_form() -> String {
 
 pub async fn login_form() -> String {
     utils::load_file_replace_shit(
-        "html/login.html",
+        "static/html/login.html",
         &[
             ("domain_", DOMAIN),
             (">//<", &animations::animated_header("Login")),
@@ -139,7 +139,7 @@ pub async fn leaderboard_comp(State(state): State<CarnyState>) -> String {
     }
 
     utils::load_file_replace_shit(
-        "html/leaderboard.html",
+        "static/html/leaderboard.html",
         &[
             ("table_domino_js_", &animations::table_domino(false)),
             ("rows_", &rows),
@@ -178,7 +178,7 @@ pub async fn base(pool: &SqlitePool, cookies: &Cookie) -> String {
         }
     }
 
-    utils::load_file_replace_shit("html/base.html", &[("header_items_", &header_list)])
+    utils::load_file_replace_shit("static/html/base.html", &[("header_items_", &header_list)])
 }
 
 pub async fn build_queue_comp(cookies: &Cookie, pool: &SqlitePool) -> String {
@@ -207,7 +207,7 @@ pub async fn build_queue_comp(cookies: &Cookie, pool: &SqlitePool) -> String {
     }
 
     utils::load_file_replace_shit(
-        "html/queue.html",
+        "static/html/queue.html",
         &[
             ("table_domino_js_", &animations::table_domino(true)),
             ("animated_header_", &animations::animated_header("Queue")),
@@ -233,7 +233,7 @@ pub async fn queue_user_panel(
     State(state): State<CarnyState>,
 ) -> String {
     utils::load_file_replace_shit(
-        "html/queue_user_panel.html",
+        "static/html/queue_user_panel.html",
         &[
             ("_username_", &username),
             // lol
@@ -251,7 +251,7 @@ pub async fn profile_comp(Path(username): Path<String>, State(state): State<Carn
         .unwrap_or_default();
 
     utils::load_file_replace_shit(
-        "html/profile.html",
+        "static/html/profile.html",
         &[
             (
                 "animated_header_",
@@ -271,7 +271,7 @@ pub async fn profile_comp(Path(username): Path<String>, State(state): State<Carn
 
 pub async fn settings_user() -> String {
     utils::load_file_replace_shit(
-        "html/settings_user.html",
+        "static/html/settings_user.html",
         &[
             ("domain_", DOMAIN),
             (">//<", &animations::animated_header("User Settings")),
