@@ -1,6 +1,7 @@
 use crate::db::models::SessionToken;
 use easy_password::bcrypt::{hash_password, verify_password};
 use headers::Cookie;
+use http::HeaderMap;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use sqlx::{sqlite::SqliteQueryResult, SqlitePool};
@@ -14,26 +15,14 @@ fn rand_str() -> String {
         .collect()
 }
 
-pub async fn create(connection: &SocketAddr, user_id: i32, pool: &SqlitePool) -> Option<String> {
+pub async fn create(ip: &str, user_id: i32, pool: &SqlitePool) -> Option<String> {
     // So apparently bcrypt has the concept of "cost". Which caps out at 31 or so.
     // Me personally, have no such concept on account of being extremely wealthy.
     // Doordash 20 times a week type money. You have no chance of getting it.
     // (This means we can't use a whole ass UUID as the hmac. Dang!)
 
     let mut unique_hmac = rand_str();
-    // if !cfg!(debug_assertions) {
-        
-    // }
-
-    // TODO: This can panic >_<
-
-    // For generated test account (see database_inator.sh)
-    let mut remote_addr = String::from("127.0.0.1");
-    if !cfg!(debug_assertions) {
-        remote_addr = connection.ip().to_string();
-    }
-
-    let hashed_addr = hash_password(&remote_addr, unique_hmac.as_bytes(), 12).unwrap();
+    let hashed_addr = hash_password(ip, unique_hmac.as_bytes(), 12).unwrap();
 
     // This looks shit. I think move **all** queries to queries.rs. That makes more sense anyway.
     let insert_result = sqlx::query(
@@ -42,7 +31,7 @@ pub async fn create(connection: &SocketAddr, user_id: i32, pool: &SqlitePool) ->
                 VALUES ($1, $2, $3, $4, $5);",
     )
     .bind(user_id)
-    .bind(connection.ip().to_string())
+    .bind(ip)
     .bind(&unique_hmac)
     .bind(&hashed_addr)
     .bind(true)
@@ -83,7 +72,7 @@ pub async fn delete_by_user_id(
         .await
 }
 
-/// Flips byte for colum `is_valid`.
+/// Flips byte for column `is_valid`.
 pub async fn set_invalid(
     user_id: i32,
     invalidation_source: &str,
@@ -98,35 +87,41 @@ pub async fn set_invalid(
     .await
 }
 
-pub async fn validate(connection: &SocketAddr, user_id: i32, pool: &SqlitePool) -> Option<String> {
+pub async fn validate(
+    ip: &str, 
+    user_id: i32,
+    pool: &SqlitePool,
+) -> Option<SessionToken> {
+
     if let Some(token) = token_by_user_id(user_id, pool).await {
         // Get remote addr without port
         if let Ok(remotes_match) = verify_password(
-            &connection.ip().to_string(),
+            &ip,
             &token.token,
             token.unique_hmac_key.as_bytes(),
         ) {
             if !remotes_match {
                 // Someone's trying to use a session token bound to a different ip than their current.
                 // Invalidate the session token, forcing the user to reauth with their password.
-                let invalidate = set_invalid(user_id, &connection.ip().to_string(), pool).await;
+                let invalidate = set_invalid(user_id, &ip, pool).await;
                 match invalidate {
                     Ok(_) => println!("invalidation ok"),
                     Err(e) => eprintln!("{e}"),
                 }
                 return None;
             }
-            return Some(token.token);
+            return Some(token);
         }
     }
     None
 }
 
-pub fn token_from_cookies(cookies: &Cookie) -> Option<String> {
+pub fn token_from_cookies(cookies: &Cookie) -> Option<SessionToken> {
     let session_option = cookies.get("session_id");
     if session_option.is_none() {
         return None;
     }
-    let token = &session_option.unwrap()["Bearer ".len()..].to_string();
-    Some(token.to_string())
+    let session = serde_json::from_str(session_option.unwrap()).unwrap();
+    // let token = &session_option.unwrap()["Bearer ".len()..].to_string();
+    Some(session)
 }

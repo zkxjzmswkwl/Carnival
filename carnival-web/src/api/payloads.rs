@@ -30,3 +30,9 @@ pub struct JoinQueueInput {
 pub struct LeaveQueueInput {
     pub queue_id: String,
 }
+
+#[derive(Deserialize)]
+pub struct UpdateSettingsInput {
+    pub battletag: String,
+    pub role: String,
+}

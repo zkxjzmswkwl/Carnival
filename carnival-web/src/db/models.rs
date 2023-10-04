@@ -1,7 +1,8 @@
+use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
 #[allow(dead_code)]
-#[derive(sqlx::FromRow, Debug)]
+#[derive(sqlx::FromRow, Serialize, Deserialize, Debug)]
 pub struct SessionToken {
     pub for_user: i32,
     pub remote_addr: String,
@@ -29,16 +30,16 @@ pub struct User {
 pub struct OverwatchMap {
     pub id: i32,
     pub name: String,
-    pub mode: String
+    pub mode: String,
 }
 
-#[allow(dead_code, Default, Debug)]
-#[derive(sqlx::FromRow, Debug, Default)]
+#[allow(dead_code, Serialize, Default, Debug)]
+#[derive(sqlx::FromRow, Clone, Serialize, Debug, Default)]
 pub struct OverwatchMatch {
     pub id: i32,
     pub map_id: i32,
     pub winner: u8,
-    pub completed: bool
+    pub completed: bool,
 }
 
 #[allow(dead_code)]
@@ -49,14 +50,14 @@ pub struct OverwatchMatchPlayer {
     pub match_id: i32,
     // Blue 1
     // Red  2
-    pub team_id: u8
+    pub team_id: u8,
 }
 
 #[allow(dead_code)]
 pub struct Queue {
     pub id: i32,
     pub title: String,
-    pub demographic: String
+    pub demographic: String,
 }
 
 #[derive(FromRow)]
@@ -64,5 +65,5 @@ pub struct QueuedPlayer {
     pub id: i32,
     pub queue_id: i32,
     pub user_id: i32,
-    pub role: String
+    pub role: String,
 }
