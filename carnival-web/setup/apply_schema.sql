@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS overwatch_match (
             id INTEGER PRIMARY KEY UNIQUE NOT NULL,
             map_id INTEGER NOT NULL,
             winner INTEGER DEFAULT 0,
-            completed INTEGER DEFAULT 0
+            status INTEGER DEFAULT 0
         );
 CREATE TABLE IF NOT EXISTS overwatch_maps (
             id INTEGER PRIMARY KEY UNIQUE NOT NULL,

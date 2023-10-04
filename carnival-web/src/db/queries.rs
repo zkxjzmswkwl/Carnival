@@ -37,7 +37,7 @@ pub mod tables {
             id INTEGER PRIMARY KEY UNIQUE NOT NULL,
             map_id INTEGER NOT NULL,
             winner INTEGER DEFAULT 0,
-            completed INTEGER DEFAULT 0
+            status INTEGER DEFAULT 0
         );"; 
     
     pub const CREATE_QUEUE: &'static str = "CREATE TABLE IF NOT EXISTS

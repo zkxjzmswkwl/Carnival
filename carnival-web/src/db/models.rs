@@ -39,7 +39,12 @@ pub struct OverwatchMatch {
     pub id: i32,
     pub map_id: i32,
     pub winner: u8,
-    pub completed: bool,
+    // 0 - Needs to be sent to matchserver
+    // 1 - Matchserver has received match data.
+    // 2 - Matchserver has configured the lobby and invited players
+    // 3 - Ongoing
+    // 4 - Completed
+    pub status: u8,
 }
 
 #[allow(dead_code)]
