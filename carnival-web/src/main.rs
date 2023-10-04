@@ -11,7 +11,7 @@ use axum::{
     routing::{get, post},
     Router, Server,
 };
-use db::services::{overwatch_match::ResolvedOverwatchMatch, user::update_settings};
+use db::services::{overwatch_match::ResolvedOverwatchMatch};
 use futures::{stream::StreamExt, SinkExt};
 use http::{HeaderName, Method};
 use rendering::{components::{
@@ -116,9 +116,9 @@ async fn wshandler(ws: WebSocketUpgrade, State(state): State<CarnyState>) -> imp
     ws.on_upgrade(|socket| websocket(socket, state))
 }
 
-async fn websocket(stream: WebSocket, state: CarnyState) {
+async fn websocket(stream: WebSocket, _state: CarnyState) {
     let (mut sender, mut receiver) = stream.split();
-    let mut username = String::new();
+    let _username = String::new();
     let mut id: i32 = 0;
     let mut token = String::new();
 
@@ -158,8 +158,8 @@ async fn main() {
             HeaderName::from_lowercase(b"hx-target").unwrap(),
         ]);
 
-    let test = ResolvedOverwatchMatch::from_id(1, &state.pool).await;
-    let (transmitter, mut receiver) = mpsc::unbounded_channel::<ResolvedOverwatchMatch>();
+    let _test = ResolvedOverwatchMatch::from_id(1, &state.pool).await;
+    let (_transmitter, _receiver) = mpsc::unbounded_channel::<ResolvedOverwatchMatch>();
 
     let app: Router = Router::new()
         // User-facing
