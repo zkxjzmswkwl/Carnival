@@ -280,11 +280,6 @@ pub async fn save_settings(
     TypedHeader(cookies): TypedHeader<Cookie>,
     Json(post_data): Json<UpdateSettingsInput>,
 ) -> (StatusCode, String) {
-    let mut remote_addr = String::from("");
-    if let Some(addr_header_val) = headers.get("x-real-ip") {
-        // cant be fucked right now.
-        remote_addr = addr_header_val.to_str().unwrap().to_string();
-    }
 
     if let Some(requesting_user) = user::from_cookies(&cookies, &state.pool).await {
         println!("{:#?}", requesting_user);
