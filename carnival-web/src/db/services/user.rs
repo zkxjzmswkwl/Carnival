@@ -70,6 +70,10 @@ pub async fn does_username_exist(username: &str, pool: &SqlitePool) -> bool {
     does_exist::<User>("SELECT * FROM users WHERE username = $1", username, pool).await
 }
 
+pub async fn does_email_exist(email: &str, pool: &SqlitePool) -> bool {
+    does_exist::<User>("SELECT * FROM users WHERE email = $1", email, pool).await
+}
+
 pub async fn does_battletag_exist(battletag: &str, pool: &SqlitePool) -> bool {
     does_exist::<User>("SELECT * FROM users WHERE battletag = $1", battletag, pool).await
 }
@@ -92,6 +96,7 @@ pub async fn create_user(
     username: &str,
     password: &str,
     battletag: &str,
+    email: &str,
     role: &str,
     pool: &SqlitePool,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
@@ -101,10 +106,24 @@ pub async fn create_user(
         username,
         hashed_pass,
         battletag,
+        email,
         role
     )
     .execute(pool)
     .await
+}
+
+pub async fn user_by_email(
+    email: &str,
+    pool: &SqlitePool
+) -> Result<User, sqlx::Error> {
+
+    let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE email = $1")
+        .bind(email)
+        .fetch_one(pool)
+        .await;
+
+    user
 }
 
 #[allow(dead_code)]

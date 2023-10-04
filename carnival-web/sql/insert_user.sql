@@ -1,4 +1,4 @@
 INSERT INTO
-    users (username, password, battletag, role)
+    users (username, password, battletag, email, role)
 VALUES
-    (?, ?, ?, ?)
+    (?, ?, ?, ?, ?)

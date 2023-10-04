@@ -23,6 +23,16 @@ pub struct User {
     pub wins: i32,
     pub losses: i32,
     pub password: String,
+    pub email: String,
+}
+
+#[derive(FromRow)]
+pub struct PasswordResetToken {
+    pub id: i32,
+    pub user_id: i32,
+    pub token: String,
+    pub created_at: i64,
+    pub expires_at: i64
 }
 
 #[allow(dead_code)]
@@ -33,7 +43,7 @@ pub struct OverwatchMap {
     pub mode: String,
 }
 
-#[allow(dead_code, Serialize, Default, Debug)]
+#[allow(dead_code)]
 #[derive(sqlx::FromRow, Clone, Serialize, Debug, Default)]
 pub struct OverwatchMatch {
     pub id: i32,
