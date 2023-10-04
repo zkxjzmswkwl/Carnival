@@ -15,4 +15,7 @@ carnival-web/sqlite.db
 carnival-web/sqlite.db-shm
 carnival-web/sqlite.db-wal
 carnival-web/test.html
-carnival-web/db-carnival*
+carnival-web/*.db
+carnival-web/*.db-shm
+carnival-web/*.db-wal
+.vscode

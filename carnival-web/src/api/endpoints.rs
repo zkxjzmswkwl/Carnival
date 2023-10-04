@@ -189,7 +189,6 @@ pub async fn login(
 
 pub async fn join_queue(
     headers: HeaderMap,
-    ConnectInfo(connection): ConnectInfo<SocketAddr>,
     TypedHeader(cookies): TypedHeader<Cookie>,
     State(state): State<CarnyState>,
     Json(post_data): Json<JoinQueueInput>,
@@ -275,7 +274,6 @@ pub async fn leave_queue(
 
 #[axum_macros::debug_handler]
 pub async fn save_settings(
-    headers: HeaderMap,
     State(state): State<CarnyState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
     Json(post_data): Json<UpdateSettingsInput>,

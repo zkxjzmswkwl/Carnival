@@ -1,11 +1,11 @@
 use crate::db::models::SessionToken;
 use easy_password::bcrypt::{hash_password, verify_password};
 use headers::Cookie;
-use http::HeaderMap;
+
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use sqlx::{sqlite::SqliteQueryResult, SqlitePool};
-use std::net::SocketAddr;
+
 
 fn rand_str() -> String {
     rand::thread_rng()
@@ -21,7 +21,7 @@ pub async fn create(ip: &str, user_id: i32, pool: &SqlitePool) -> Option<String>
     // Doordash 20 times a week type money. You have no chance of getting it.
     // (This means we can't use a whole ass UUID as the hmac. Dang!)
 
-    let mut unique_hmac = rand_str();
+    let unique_hmac = rand_str();
     let hashed_addr = hash_password(ip, unique_hmac.as_bytes(), 12).unwrap();
 
     // This looks shit. I think move **all** queries to queries.rs. That makes more sense anyway.
