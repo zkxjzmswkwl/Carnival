@@ -13,8 +13,9 @@ enum ActionStyle {
     KeyboardAction(KeyboardAction),
 }
 
-//this seems bad
-//bad as in not good but still performant
+// this seems bad
+// bad as in not good but still performant
+// NOTE(Carter): Seems fine to be tbh
 impl ActionStyle {
     fn invoke(&self) {
         match &self {
@@ -67,13 +68,13 @@ impl ActionChain {
         log::debug!("Chain \"{name}\" has length of {chain_len}");
 
         chain.iter().for_each(|action| {
-            //see the comment "this seems bad"
+            // see the comment "this seems bad"
             action.invoke()
         });
         self
     }
 
-    //its either use json or parse a custom toml structure.
+    // its either use json or parse a custom toml structure.
     // KEEP IT SIMPLE STUPID:  https://www.youtube.com/watch?v=k0qmkQGqpM8
     pub fn load(&mut self) -> Result<&Self, Box<dyn Error>> {
         *self = serde_json::from_str(&read_to_string("action_chains.json")?)?;

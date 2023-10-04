@@ -22,6 +22,24 @@ pub async fn create_map(
     .await
 }
 
+pub async fn set_match_status(match_id: i32, match_status: u32,  pool: &SqlitePool) -> Result<SqliteQueryResult, sqlx::Error> {
+    sqlx::query_file!("sql/set_match_status.sql", match_status, match_id).execute(pool).await
+}
+
+pub async fn get_pending_match(pool: &SqlitePool) -> Option<ResolvedOverwatchMatch> {
+    let match_row = sqlx::query_file_as_unchecked!(OverwatchMatch, "sql/get_pending_match.sql")
+        .fetch_one(pool)
+        .await;
+
+    if match_row.is_err() {
+        return None;
+    }
+
+    let resolved_match = ResolvedOverwatchMatch::from_id(match_row.unwrap().id, pool).await;
+    println!("{:#?}", resolved_match);
+    Some(resolved_match)
+}
+
 #[allow(dead_code)]
 pub async fn create_match(
     map_id: i32,
@@ -115,6 +133,7 @@ pub struct ResolvedTeams {
 impl ResolvedTeams {
     // These shouldn't be vectors of strings
     // since they're being reallocated with a call to new.
+    #[allow(dead_code)]
     pub fn new(blue: Vec<String>, red: Vec<String>) -> Self {
         Self { blue, red }
     }
@@ -133,7 +152,7 @@ impl ResolvedTeams {
                 });
 
         let red: Vec<String> =
-            sqlx::query_file_scalar_unchecked!("sql/resolve_match.sql", ow_match_id, 1)
+            sqlx::query_file_scalar_unchecked!("sql/resolve_match.sql", ow_match_id, 2)
                 .fetch_all(pool)
                 .await
                 .unwrap_or_else(|err| {
