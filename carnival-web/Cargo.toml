@@ -10,19 +10,24 @@ linker = "rust-lld"
 
 [dependencies]
 anyhow = "1.0.75"
-axum = {version="0.6.20", features=["headers"]}
-axum-extra = "0.8.0"
+arc = "0.0.1"
+async-channel = "1.9.0"
+axum = { version = "0.6.2", features = ["headers", "ws"] }
+axum-extra = { version = "0.8.0" }
 axum-macros = "0.3.8"
 dotenv = "0.15.0"
 dotenv_codegen = "0.15.0"
 easy_password = "0.1.4"
+futures = "0.3.28"
 headers = "0.3.9"
 http = "0.2.9"
-rand = {version = "0.8.5", features = ["std_rng"]}
+rand = { version = "0.8.5", features = ["std_rng"] }
 serde = "1.0.188"
 serde_json = "1.0.107"
-sqlx = {version = "0.7.1", features = ["sqlite", "runtime-tokio"]}
+signals2 = "0.3.3"
+simple-websockets = "0.1.6"
+sqlx = { version = "0.7.1", features = ["sqlite", "runtime-tokio"] }
 static_str_ops = "0.1.2"
-tokio = {version = "1.32.0", features = ["full"]}
-tower = {version = "0.4.13", features=["full"]}
-tower-http = {version = "0.4.4", features=["full"]}
+tokio = { version = "1.32.0", features = ["full"] }
+tower = { version = "0.4.13", features = ["full"] }
+tower-http = { version = "0.4.4", features = ["full"] }
