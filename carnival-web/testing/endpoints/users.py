@@ -81,7 +81,8 @@ class RegisterMismatchedPasswords(Test):
             "role": "Tank",
             "password": "123123",
             "password_conf": "1123123",
-            "battletag": "realuser#12333"
+            "battletag": "realuser#12333",
+            "email": "realuserwow@blizzard.com"
         }
         return post_get_response(endpoint="api/register",
                                  json_payload=payload)
@@ -99,6 +100,7 @@ class BattletagExists(Test):
             "battletag": "Fuey500#123",
             "password": "123",
             "password_conf": "123",
+            "email": "realuserxD@blizzard.com"
         }
         post_get_response(endpoint="api/register",
                           json_payload=create_payload)
@@ -108,11 +110,39 @@ class BattletagExists(Test):
             "role": "Tank",
             "password": "123123",
             "password_conf": "123123",
-            "battletag": "Fuey500#123"
+            "battletag": "Fuey500#123",
+            "email": "realuser123@blizzard.com"
         }
         return post_get_response(endpoint="api/register",
                                  json_payload=payload)
 
+class EmailExists(Test):
+    def __init__(self):
+        super().__init__("EmailExists",
+                         Response(400, "Email already exists"))
+
+    def test(self) -> Response:
+        create_payload = {
+            "username": str(uuid.uuid1()).replace("-", "")[0:40],
+            "role": "Tank",
+            "battletag": "Fuey500#123",
+            "password": "123",
+            "password_conf": "123",
+            "email": "realuserxD@blizzard.com"
+        }
+        post_get_response(endpoint="api/register",
+                          json_payload=create_payload)
+
+        payload = {
+            "username": str(uuid.uuid1()).replace("-", "")[0:40],
+            "role": "Tank",
+            "password": "123123",
+            "password_conf": "123123",
+            "battletag": "Fuey501#123",
+            "email": "realuserxD@blizzard.com"
+        }
+        return post_get_response(endpoint="api/register",
+                                 json_payload=payload)
 
 class Login(Test):
     def __init__(self):
@@ -137,6 +167,7 @@ class Register(Test):
             "battletag": str(uuid.uuid1()).replace("-", "")[0:40],
             "password": "123",
             "password_conf": "123",
+            "email": "realuser@blizzard.com"
         }
         return post_get_response(endpoint="api/register", json_payload=payload)
 
@@ -161,6 +192,10 @@ def test_users():
     battletag_exists = BattletagExists()
     battletag_exists_resp = battletag_exists.test()
     battletag_exists.check(battletag_exists_resp)
+
+    email_exists = EmailExists()
+    email_exists_resp = email_exists.test()
+    email_exists.check(email_exists_resp)
 
 
 if __name__ == "__main__":

@@ -15,12 +15,14 @@ async-channel = "1.9.0"
 axum = { version = "0.6.2", features = ["headers", "ws"] }
 axum-extra = { version = "0.8.0" }
 axum-macros = "0.3.8"
+chrono = "0.4.31"
 dotenv = "0.15.0"
 dotenv_codegen = "0.15.0"
 easy_password = "0.1.4"
 futures = "0.3.28"
 headers = "0.3.9"
 http = "0.2.9"
+lettre = "0.10"
 rand = { version = "0.8.5", features = ["std_rng"] }
 serde = "1.0.188"
 serde_json = "1.0.107"
@@ -31,3 +33,11 @@ static_str_ops = "0.1.2"
 tokio = { version = "1.32.0", features = ["full"] }
 tower = { version = "0.4.13", features = ["full"] }
 tower-http = { version = "0.4.4", features = ["full"] }
+
+[dependencies.uuid]
+version = "1.4.1"
+features = [
+    "v4",                # Lets you generate random UUIDs
+    "fast-rng",          # Use a faster (but still sufficiently random) RNG
+    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
+]
