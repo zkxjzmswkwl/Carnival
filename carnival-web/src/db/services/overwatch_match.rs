@@ -51,7 +51,7 @@ pub async fn create_match(
     }
 
     // Insert match before inserting thru rows for players
-    let match_result = sqlx::query(
+    let _match_result = sqlx::query(
         "
         INSERT INTO overwatch_match (map_id)
         VALUES ($1);",
