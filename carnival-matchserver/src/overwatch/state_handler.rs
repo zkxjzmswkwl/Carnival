@@ -10,6 +10,7 @@ pub struct StateHandler {
 }
 
 impl StateHandler {
+    #[allow(dead_code)]
     pub fn test_set_dummy_data(&mut self) -> &mut Self {
         self.client_state.test_set_dummy_data();
         self.game_state.test_set_dummy_data();

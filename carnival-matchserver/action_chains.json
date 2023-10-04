@@ -1,29 +1,36 @@
 {
     "keyboard_action_demo": [
-      {"KeyboardAction": {"input": "carter#6969", "delay": 69 } },
-      { "MouseAction": { "x": 69, "y": 69, "delay": 69 } }
+      {"KeyboardAction": {"input": "", "is_dynamic": true, "delay": 69 } },
+      {"MouseAction": { "x": 69, "y": 69, "is_dynamic": false, "delay": 69 } }
     ],
     "custom_lobby" : [
-      {"MouseAction":  { "x": 162, "y": 376, "delay": 800}},
-      {"MouseAction":  { "x": 1641, "y": 356, "delay": 800}},
-      {"MouseAction":  { "x": 1773, "y": 279, "delay": 1500}}
+      {"MouseAction":  { "x": 162, "y": 376, "is_dynamic": false, "delay": 800}},
+      {"MouseAction":  { "x": 1641, "y": 356, "is_dynamic": false, "delay": 800}},
+      {"MouseAction":  { "x": 1773, "y": 279, "is_dynamic": false, "delay": 1500}}
     ],
     "move_self_spec" : [
-      {"MouseAction":  { "x": 1403, "y": 260, "delay": 50}},
-      {"MouseAction":  { "x": 1128, "y": 430, "delay": 50}},
-      {"MouseAction":  { "x": 886, "y": 850, "delay": 50}},
-      {"MouseAction":  { "x": 1415, "y": 259, "delay": 50}}
+      {"MouseAction":  { "x": 1403, "y": 260, "is_dynamic": false, "delay": 50}},
+      {"MouseAction":  { "x": 1128, "y": 430, "is_dynamic": false, "delay": 50}},
+      {"MouseAction":  { "x": 886, "y": 850, "is_dynamic": false, "delay": 50}},
+      {"MouseAction":  { "x": 1415, "y": 259, "is_dynamic": false, "delay": 50}}
     ],
     "set_preset" : [
-      {"MouseAction":  { "x": 1552, "y": 237, "delay": 50}},
-      {"MouseAction":  { "x": 281, "y": 365, "delay": 1200}},
-      {"MouseAction":  { "x": 261, "y": 346, "delay": 1500}},
-      {"MouseAction":  { "x": 1042, "y": 604, "delay": 100}},
-      {"MouseAction":  { "x": 1797, "y": 1006, "delay": 100}},
-      {"MouseAction":  { "x": 1797, "y": 1006, "delay": 200}}
+      {"MouseAction":  { "x": 1552, "y": 237, "is_dynamic": false, "delay": 50}},
+      {"MouseAction":  { "x": 281, "y": 365, "is_dynamic": false, "delay": 1800}},
+      {"MouseAction":  { "x": 261, "y": 346, "is_dynamic": false, "delay": 700}},
+      {"MouseAction":  { "x": 1042, "y": 604, "is_dynamic": false, "delay": 100}},
+      {"MouseAction":  { "x": 1797, "y": 1006, "is_dynamic": false, "delay": 100}},
+      {"MouseAction":  { "x": 1797, "y": 1006, "is_dynamic": false, "delay": 200}}
     ],
     "set_invite_only" : [
-      {"MouseAction":  { "x": 183, "y": 699, "delay": 50}},
-      {"MouseAction":  { "x": 156, "y": 808, "delay": 50}}
+      {"MouseAction":  { "x": 183, "y": 699, "is_dynamic": false, "delay": 50}},
+      {"MouseAction":  { "x": 156, "y": 808, "is_dynamic": false, "delay": 50}}
+    ],
+    "invite_player" : [
+      { "MouseAction": { "x" : 1675, "y": 250, "delay": 25}},
+      { "MouseAction": { "x":  1275, "y": 794, "delay": 25}},
+      { "MouseAction": { "x":  1204, "y": 867, "delay": 25}},
+      { "MouseAction": { "x":  1159, "y": 242, "delay": 25}},
+      { "MouseAction": { "x":  1026, "y": 892, "delay": 25}}
     ]
 }

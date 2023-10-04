@@ -13,10 +13,11 @@ use windows::{
 };
 use winput::Vk;
 
-pub mod actions;
+pub mod static_actions;
 pub mod client_state;
 pub mod game_state;
 pub mod state_handler;
+pub mod dyn_actions;
 
 fn get_hwnd() -> Result<HWND, windows::core::Error> {
     let process_name: PCSTR = windows::core::s!("Overwatch");
@@ -58,7 +59,7 @@ pub fn remove_window_decorations(
 
 // The only way these errors are thrown is by targeting a window of an elevated process
 // from a non-elevated process. In the context of Overwatch, this will never happen.
-pub fn client_prelude() -> Result<(), windows::core::Error> {
+pub fn prelude() -> Result<(), windows::core::Error> {
     let hwnd = get_hwnd().unwrap();
     // Yes, these need to be set individually and in this order.
     remove_window_decorations(&hwnd, WS_CAPTION)?;

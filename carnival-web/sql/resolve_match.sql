@@ -1,5 +1,5 @@
 SELECT
-    users.username
+    users.battletag
 FROM
     overwatch_match_players
     INNER JOIN users on overwatch_match_players.user_id = users.id

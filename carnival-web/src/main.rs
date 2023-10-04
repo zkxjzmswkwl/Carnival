@@ -11,7 +11,7 @@ use axum::{
     routing::{get, post},
     Router, Server,
 };
-use db::services::{overwatch_match::ResolvedOverwatchMatch};
+use db::services::overwatch_match::{ResolvedOverwatchMatch, self};
 use futures::{stream::StreamExt, SinkExt};
 use http::{HeaderName, Method};
 use rendering::{components::{
@@ -112,28 +112,53 @@ impl CarnyState {
     }
 }
 
+// TODO: Move this shit out of here.
 async fn wshandler(ws: WebSocketUpgrade, State(state): State<CarnyState>) -> impl IntoResponse {
     ws.on_upgrade(|socket| websocket(socket, state))
 }
 
-async fn websocket(stream: WebSocket, _state: CarnyState) {
+// TODO: Move this shit out of here.
+async fn websocket(stream: WebSocket, state: CarnyState) {
     let (mut sender, mut receiver) = stream.split();
-    let _username = String::new();
-    let mut id: i32 = 0;
-    let mut token = String::new();
+    // If the incoming connection provides the matchserver's auth token, this is set.
+    // let mut is_matchserver = false;
+    let mut _token = String::new();
+    let mut current_match = ResolvedOverwatchMatch::default();
 
+    // Wait for message from matchserver
     while let Some(Ok(message)) = receiver.next().await {
         if let Message::Text(recv) = message {
-            if recv.starts_with("whattup_bitch:") && recv.contains(":im:") {
-                let deets = recv.split(":").collect::<Vec<&str>>();
-                token = deets[1].to_string();
-                id = deets[4].parse().unwrap();
+            // If the server has just connected, it will immediately auth itself
+            if recv.starts_with("auth:") {
+                println!("{:#?}", recv);
+                _token = recv.split(":").next().unwrap().to_string();
+                // TODO: validate_matchserver(&token)
             }
-            // println!("{:#?}", recv);
-            sender.send(Message::Text(String::from("sup bitch"))).await;
-            sender
-                .send(Message::Text(format!("{}\t{}", token, id)))
-                .await;
+
+            // The matchserver is asking if there's a pending match (status = 0)
+            if recv == "match?" {
+                // Check if there is
+                if let Some(resolved_match) = overwatch_match::get_pending_match(&state.pool).await {
+                    // Store the match data temporarily
+                    current_match = resolved_match.clone();
+                    // If there is, tell the matchserver to expect to receive the match now
+                    if let Ok(_) = sender.send(Message::Text(String::from("match"))).await {
+                        // Send the match
+                        sender.send(
+                            Message::Text(serde_json::to_string(&resolved_match).unwrap()
+                        )).await;
+
+                    }
+                }
+            }
+
+            // Matchserver is letting us know it has the match data for a match we've just sent it.
+            if recv == "match ack" {
+                // Need to update that match's row to show that it no longer needs to be sent to a matchserver
+                // We stored it in `current_match`.                                 1 = matchserver has the match.
+                overwatch_match::set_match_status(current_match.overwatch_match.id, 1, &state.pool).await;
+            }
+            sender.send(Message::Text(String::from("ack"))).await;
         }
     }
 }
@@ -157,9 +182,6 @@ async fn main() {
             HeaderName::from_lowercase(b"hx-current-url").unwrap(),
             HeaderName::from_lowercase(b"hx-target").unwrap(),
         ]);
-
-    let _test = ResolvedOverwatchMatch::from_id(1, &state.pool).await;
-    let (_transmitter, _receiver) = mpsc::unbounded_channel::<ResolvedOverwatchMatch>();
 
     let app: Router = Router::new()
         // User-facing
@@ -189,7 +211,7 @@ async fn main() {
         .route("/api/join_queue", post(join_queue))
         .route("/api/leave_queue", post(leave_queue))
         .route("/api/settings_user", post(save_settings))
-        // Websockets..?
+        // Websockets
         .route("/ws/notifications", get(wshandler))
         .layer(cors)
         .with_state(state.clone());
