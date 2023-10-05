@@ -1,13 +1,9 @@
-use std::{sync::mpsc, thread};
+use std::{sync::mpsc, thread, time};
 
-use crate::{
-    commons::types::ResolvedOverwatchMatch,
-    config::Config,
-};
-use overwatch::state_handler::StateHandler;
-use tracing_subscriber::filter::LevelFilter;
+use crate::{commons::types::ResolvedOverwatchMatch, config::Config};
 use color_eyre::eyre::Result;
-
+use overwatch::{dontlookblizzard::Tank, state_handler::StateHandler};
+use tracing_subscriber::filter::LevelFilter;
 mod commons;
 mod config;
 mod connection;
@@ -27,10 +23,26 @@ async fn main() -> Result<()> {
         .with_max_level(log_level)
         .init();
 
-    overwatch::prelude()?;
-    let mut state_handler: StateHandler = StateHandler::default();
-    state_handler.restore();
-    println!("{state_handler:#?}");
+    unsafe {
+        let tank: Tank = Tank::new();
+        let mut str_test = tank.find_str("PLAY");
+        str_test
+            .iter()
+            .for_each(|str| println!("{} @ 0x{:X}", str.1, str.0));
+        println!("Count pre filter: {}", str_test.len());
+        println!("==================================================");
+        thread::sleep(time::Duration::from_millis(3000));
+        tank.retain_valid(&mut str_test);
+        str_test
+            .iter()
+            .for_each(|str| println!("{} @ 0x{:X}", str.1, str.0));
+        println!("Count post filter: {}", str_test.len());
+        println!("==================================================");
+    }
+
+    let mut _state_handler: StateHandler = StateHandler::default();
+    // state_handler.restore();
+    // println!("{state_handler:#?}");
 
     let config = Config::load();
     println!("{config:#?}");
@@ -56,8 +68,8 @@ async fn main() -> Result<()> {
                         .invoke_chain("set_invite_only");
 
                     resolved_match.resolved_teams.invite();
-                },
-                Err(e) => panic!("{e}")
+                }
+                Err(e) => panic!("{e}"),
             }
         }
     }
