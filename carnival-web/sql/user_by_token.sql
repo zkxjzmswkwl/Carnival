@@ -6,7 +6,8 @@ SELECT
     users.role,
     users.rating,
     users.wins,
-    users.losses
+    users.losses,
+    users.email
 FROM
     session_tokens
     INNER JOIN users ON session_tokens.for_user = users.id

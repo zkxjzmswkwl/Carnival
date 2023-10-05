@@ -17,6 +17,7 @@ impl StateHandler {
         self
     }
 
+    #[allow(dead_code)]
     fn to_toml(&self) -> Option<String> {
         if let Ok(json) = toml::to_string(self) {
             Some(json)
@@ -25,6 +26,7 @@ impl StateHandler {
         }
     }
 
+    #[allow(dead_code)]
     pub fn dump(&self) {
         if let Some(json_str) = self.to_toml() {
             if File::create("state_handler.toml").is_err() {

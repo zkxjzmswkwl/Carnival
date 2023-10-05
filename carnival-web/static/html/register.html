@@ -2,7 +2,9 @@
   <div class="mb-3"><span id="animated-header" class="text-2xl text-white font-bold"></span></div>
   <form hx-post="domain_/api/register" hx-ext="json-enc" class="join join-vertical w-full">
     <input name="username" type="text" placeholder="Username" class="input input-bordered rounded-lg mb-2 w-full">
+    <input name="email" type="text" placeholder="Email" class="input input-bordered rounded-lg mb-2 w-full">
     <input name="battletag" type="text" placeholder="Battletag (Case sensitive)" class="input input-bordered rounded-lg mb-2 w-full">
+
     <select name="role" class="select select-bordered w-full mb-2">
       <option disabled selected>Role</option>
       <option>Tank</option>
@@ -11,6 +13,12 @@
     </select>
     <input name="password" type="password" placeholder="Password" class="input input-bordered rounded-lg mb-2 w-full">
     <input name="password_conf" type="password" placeholder="Password confirmation" class="input input-bordered rounded-lg mb-2 w-full">
+      <label class="label">
+        <div class="tooltip" data-tip="Bracket keys are used to place users into specific brackets on registration. If you've not been given one, don't worry about it and leave the value as-is.">
+          <span class="label-text text-xs">What's this?</span>
+        </div>
+      </label>
+    <input name="bracket_key" type="text" placeholder="Bracket key" value="DefaultKey" class="input input-bordered rounded-lg mb-2 w-full">
     <button class="btn btn-wide bg-[#1a8cd8] text-white w-full">Register</button>
   </form>
 </div>

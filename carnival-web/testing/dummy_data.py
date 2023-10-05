@@ -7,6 +7,8 @@ DUMMY_USERS = [
         "battletag": "DummyTank1#123",
         "password": "123",
         "password_conf": "123",
+        "email": "realuser1@blizzard.com",
+        "bracket_key": "DefaultKey",
     },
     {
         "username": "DummyTank2",
@@ -14,6 +16,8 @@ DUMMY_USERS = [
         "battletag": "DummyTank2#123",
         "password": "123",
         "password_conf": "123",
+        "email": "realuser2@blizzard.com",
+        "bracket_key": "DefaultKey"
     },
     {
         "username": "DummyDPS1",
@@ -21,6 +25,8 @@ DUMMY_USERS = [
         "battletag": "DummyDPS1#123",
         "password": "123",
         "password_conf": "123",
+        "email": "realuser3@blizzard.com",
+        "bracket_key": "DefaultKey"
     },
     {
         "username": "DummyDPS2",
@@ -28,6 +34,8 @@ DUMMY_USERS = [
         "battletag": "DummyDPS2#123",
         "password": "123",
         "password_conf": "123",
+        "email": "realuser4@blizzard.com",
+        "bracket_key": "DefaultKey"
     },
     {
         "username": "DummyDPS3",
@@ -35,6 +43,8 @@ DUMMY_USERS = [
         "battletag": "DummyDPS3#123",
         "password": "123",
         "password_conf": "123",
+        "email": "realuser5@blizzard.com",
+        "bracket_key": "DefaultKey"
     },
     {
         "username": "DummyDPS4",
@@ -42,6 +52,8 @@ DUMMY_USERS = [
         "battletag": "DummyDPS4#123",
         "password": "123",
         "password_conf": "123",
+        "email": "realuser6@blizzard.com",
+        "bracket_key": "DefaultKey"
     },
     {
         "username": "DummySupport1",
@@ -49,6 +61,8 @@ DUMMY_USERS = [
         "battletag": "DummySuppor#123t1",
         "password": "123",
         "password_conf": "123",
+        "email": "realuser7@blizzard.com",
+        "bracket_key": "DefaultKey"
     },
     {
         "username": "DummySupport2",
@@ -56,6 +70,8 @@ DUMMY_USERS = [
         "battletag": "DummySupport2#123",
         "password": "123",
         "password_conf": "123",
+        "email": "realuser8@blizzard.com",
+        "bracket_key": "DefaultKey"
     },
     {
         "username": "DummySupport3",
@@ -63,6 +79,8 @@ DUMMY_USERS = [
         "battletag": "DummySupport3#123",
         "password": "123",
         "password_conf": "123",
+        "email": "realuser9@blizzard.com",
+        "bracket_key": "DefaultKey"
     },
     {
         "username": "DummySupport4",
@@ -70,6 +88,8 @@ DUMMY_USERS = [
         "battletag": "DummySupport4#123",
         "password": "123",
         "password_conf": "123",
+        "email": "realuser10@blizzard.com",
+        "bracket_key": "DefaultKey"
     },
 ]
 

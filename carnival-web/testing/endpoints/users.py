@@ -54,6 +54,8 @@ def post_get_response(*, endpoint, json_payload):
             f"http://localhost:3000/{endpoint}",
             json=json_payload,
             headers={"Content-Type": "application/json"})
+    # ???? is this returning None???? For just one test???
+    print(r)
     return Response(r.status_code, r.text)
 
 
@@ -81,7 +83,8 @@ class RegisterMismatchedPasswords(Test):
             "role": "Tank",
             "password": "123123",
             "password_conf": "1123123",
-            "battletag": "realuser#12333"
+            "battletag": "realuser#12333",
+            "email": "realuserwow@blizzard.com"
         }
         return post_get_response(endpoint="api/register",
                                  json_payload=payload)
@@ -99,6 +102,7 @@ class BattletagExists(Test):
             "battletag": "Fuey500#123",
             "password": "123",
             "password_conf": "123",
+            "email": "realuserxD@blizzard.com"
         }
         post_get_response(endpoint="api/register",
                           json_payload=create_payload)
@@ -108,11 +112,39 @@ class BattletagExists(Test):
             "role": "Tank",
             "password": "123123",
             "password_conf": "123123",
-            "battletag": "Fuey500#123"
+            "battletag": "Fuey500#123",
+            "email": "realuser123@blizzard.com"
         }
         return post_get_response(endpoint="api/register",
                                  json_payload=payload)
 
+class EmailExists(Test):
+    def __init__(self):
+        super().__init__("EmailExists",
+                         Response(400, "Email already exists"))
+
+    def test(self) -> Response:
+        create_payload = {
+            "username": str(uuid.uuid1()).replace("-", "")[0:40],
+            "role": "Tank",
+            "battletag": "Fuey500#123",
+            "password": "123",
+            "password_conf": "123",
+            "email": "realuserxD@blizzard.com"
+        }
+        post_get_response(endpoint="api/register",
+                          json_payload=create_payload)
+
+        payload = {
+            "username": str(uuid.uuid1()).replace("-", "")[0:40],
+            "role": "Tank",
+            "password": "123123",
+            "password_conf": "123123",
+            "battletag": "Fuey501#123",
+            "email": "realuserxD@blizzard.com"
+        }
+        return post_get_response(endpoint="api/register",
+                                 json_payload=payload)
 
 class Login(Test):
     def __init__(self):
@@ -137,11 +169,46 @@ class Register(Test):
             "battletag": str(uuid.uuid1()).replace("-", "")[0:40],
             "password": "123",
             "password_conf": "123",
+            "email": "realuser@blizzard.com"
         }
         return post_get_response(endpoint="api/register", json_payload=payload)
 
 
+class JoinQueue(Test):
+    def __init__(self):
+        super().__init__("JoinQueue", Response(200, None))
+    
+    def test(self) -> Response:
+        s = requests.Session()
+        r = s.post("http://localhost:3000/api/login", json={"username": "DummyDPS1", "password": "123"}, headers={"Content-Type": "application/json"})
+        if r.status_code == 200:
+            queue_resp = s.post("http://localhost:3000/api/join_queue", json={"queue_id": "1"}, headers={"Content-Type": "application/json"})
+            return Response(queue_resp.status_code, None)
+        return Response(69, None)
+
+
+class LeaveQueue(Test):
+    def __init__(self):
+        super().__init__("LeaveQueue", Response(200, None))
+    
+    def test(self) -> Response:
+        s = requests.Session()
+        r = s.post("http://localhost:3000/api/login", json={"username": "DummyDPS1", "password": "123"}, headers={"Content-Type": "application/json"})
+        if r.status_code == 200:
+            queue_resp = s.post("http://localhost:3000/api/leave_queue", json={"queue_id": "1"}, headers={"Content-Type": "application/json"})
+            return Response(queue_resp.status_code, None)
+        return Response(69, None)
+
+
 def test_users():
+    join_queue = JoinQueue()
+    join_queue_resp = join_queue.test()
+    join_queue.check(join_queue_resp)
+
+    leave_queue = LeaveQueue()
+    leave_queue_resp = leave_queue.test()
+    leave_queue.check(leave_queue_resp)
+
     register = Register()
     register_resp = register.test()
     register.check(register_resp)
@@ -161,6 +228,10 @@ def test_users():
     battletag_exists = BattletagExists()
     battletag_exists_resp = battletag_exists.test()
     battletag_exists.check(battletag_exists_resp)
+
+    email_exists = EmailExists()
+    email_exists_resp = email_exists.test()
+    email_exists.check(email_exists_resp)
 
 
 if __name__ == "__main__":

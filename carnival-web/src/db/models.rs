@@ -23,6 +23,16 @@ pub struct User {
     pub wins: i32,
     pub losses: i32,
     pub password: String,
+    pub email: String,
+}
+
+#[derive(FromRow)]
+pub struct PasswordResetToken {
+    pub id: i32,
+    pub user_id: i32,
+    pub token: String,
+    pub created_at: i64,
+    pub expires_at: i64
 }
 
 #[allow(dead_code)]
@@ -33,7 +43,7 @@ pub struct OverwatchMap {
     pub mode: String,
 }
 
-#[allow(dead_code, Serialize, Default, Debug)]
+#[allow(dead_code)]
 #[derive(sqlx::FromRow, Clone, Serialize, Debug, Default)]
 pub struct OverwatchMatch {
     pub id: i32,
@@ -42,7 +52,7 @@ pub struct OverwatchMatch {
     // 0 - Needs to be sent to matchserver
     // 1 - Matchserver has received match data.
     // 2 - Matchserver has configured the lobby and invited players
-    // 3 - Ongoing
+    // 3 - In game 
     // 4 - Completed
     pub status: u8,
 }
@@ -71,4 +81,24 @@ pub struct QueuedPlayer {
     pub queue_id: i32,
     pub user_id: i32,
     pub role: String,
+}
+
+#[derive(FromRow)]
+pub struct Bracket {
+    pub id: i32,
+    pub queue_id: i32
+}
+
+#[derive(FromRow)]
+pub struct BracketThruTable {
+    pub id: i32,
+    pub user_id: i32,
+    pub bracket_id: i32
+}
+
+#[derive(FromRow)]
+pub struct BracketKey {
+    pub id: i32,
+    pub bracket_id: i32,
+    pub key: String
 }
