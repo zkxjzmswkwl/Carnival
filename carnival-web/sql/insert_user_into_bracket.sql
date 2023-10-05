@@ -1,0 +1,1 @@
+insert into brackets_thru(user_id, bracket_id) values(?, ?);

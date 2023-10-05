@@ -39,15 +39,15 @@ pub mod tables {
             map_id INTEGER NOT NULL,
             winner INTEGER DEFAULT 0,
             status INTEGER DEFAULT 0
-        );"; 
-    
+        );";
+
     pub const CREATE_QUEUE: &str = "CREATE TABLE IF NOT EXISTS
         queues (
             id INTEGER PRIMARY KEY UNIQUE NOT NULL,
             title VARCHAR(100) UNIQUE NOT NULL,
             demographic VARCHAR(100) UNIQUE NOT NULL
         );";
-    
+
     pub const CREATE_QUEUED_PLAYERS: &str = "CREATE TABLE IF NOT EXISTS
         queued_players (
             id INTEGER PRIMARY KEY UNIQUE NOT NULL,
@@ -65,4 +65,8 @@ pub mod tables {
             expires_at INTEGER NOT NULL,                        -- maybe we can make it compatible... but I cba
             FOREIGN KEY(user_id) REFERENCES users(id)           -- foreign key constraint
         );";
+
+    pub const CREATE_BRACKETS: &str =
+        "create table if not exists brackets(id integer primary key, queue_id not null);";
+    pub const CREATE_BRACKETS_THRU: &str = "create table if not exists brackets_thru(id integer primary key, user_id integer not null, bracket_id integer not null);";
 }

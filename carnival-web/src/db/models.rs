@@ -82,3 +82,16 @@ pub struct QueuedPlayer {
     pub user_id: i32,
     pub role: String,
 }
+
+#[derive(FromRow)]
+pub struct Bracket {
+    pub id: i32,
+    pub queue_id: i32
+}
+
+#[derive(FromRow)]
+pub struct BracketThruTable {
+    pub id: i32,
+    pub user_id: i32,
+    pub bracket_id: i32
+}
