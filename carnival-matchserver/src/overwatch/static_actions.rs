@@ -77,7 +77,7 @@ impl ActionChain {
     // its either use json or parse a custom toml structure.
     // KEEP IT SIMPLE STUPID:  https://www.youtube.com/watch?v=k0qmkQGqpM8
     pub fn load(&mut self) -> Result<&Self, Box<dyn Error>> {
-        *self = serde_json::from_str(&read_to_string("action_chains.json")?)?;
+        *self = serde_json::from_str(&read_to_string("Z:/carnival-git-test-3/carnival-matchserver/action_chains.json")?)?;
         Ok(self)
     }
 }

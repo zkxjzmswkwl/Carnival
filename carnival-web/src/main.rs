@@ -139,6 +139,7 @@ async fn websocket(stream: WebSocket, state: CarnyState) {
             // If the server has just connected, it will immediately auth itself
             if recv.starts_with("auth:") {
                 println!("{:#?}", recv);
+                sender.send(Message::Text(String::from("auth ack"))).await;
                 _token = recv.split(":").next().unwrap().to_string();
                 // TODO: validate_matchserver(&token)
             }
@@ -161,6 +162,9 @@ async fn websocket(stream: WebSocket, state: CarnyState) {
             }
 
             match recv.as_str() {
+                "ack" => {
+                    sender.send(Message::Text(String::from("ack"))).await;
+                }
                 // Matchserver is letting us know it has the match data for a match we've just sent it.
                 "match ack" => {
                     // Need to update that match's row to show that it no longer needs to be sent to a matchserver

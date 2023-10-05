@@ -27,16 +27,20 @@ async fn main() -> Result<()> {
         .with_max_level(log_level)
         .init();
 
-    overwatch::prelude()?;
-    let mut state_handler: StateHandler = StateHandler::default();
-    state_handler.restore();
-    println!("{state_handler:#?}");
+    let mut _state_handler: StateHandler = StateHandler::default();
+    // state_handler.restore();
+    // println!("{state_handler:#?}");
 
     let config = Config::load();
     println!("{config:#?}");
 
     let (tx, rx) = mpsc::channel::<String>();
+    // Need to clone the sender so we are able to pass the original to the websocket connection thread
+    // since Sender/Receivers are not threadsafe. 
+    let tx1 = tx.clone();
+
     thread::spawn(move || {
+        log::info!("{:#?}", thread::current().id());
         connection::connect(tx);
     });
 
@@ -48,6 +52,7 @@ async fn main() -> Result<()> {
         if let Ok(recv) = rx.recv() {
             match serde_json::from_str::<ResolvedOverwatchMatch>(&recv) {
                 Ok(resolved_match) => {
+                    overwatch::prelude()?;
                     println!("{:#?}", resolved_match);
                     action_chains
                         .invoke_chain("custom_lobby")
