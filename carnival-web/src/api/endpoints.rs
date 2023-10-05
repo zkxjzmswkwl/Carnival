@@ -31,10 +31,7 @@ use super::payloads::{
 };
 
 async fn validate_session_cookie(user_id: i32, ip: &str, pool: &SqlitePool) -> bool {
-    match session::validate(ip, user_id, pool).await {
-        Some(_) => return true,
-        None => return false,
-    }
+    session::validate(ip, user_id, pool).await.is_some() 
 }
 
 pub async fn register(
@@ -176,7 +173,7 @@ pub async fn login(
                 *r.status_mut() = StatusCode::OK;
                 *r.body_mut() = Full::from(format!("<script>{}</script>", redirect_js));
 
-                let cookies_json = serde_json::to_string(&session).unwrap().to_string();
+                let cookies_json = serde_json::to_string(&session).unwrap();
                 r.headers_mut().insert(
                     "Set-Cookie",
                     HeaderValue::from_str(static_format!("session_id={};path=/;", cookies_json,))
@@ -220,7 +217,14 @@ pub async fn forgot_password(
 
     let expires_at = (Utc::now() + Duration::hours(2)).timestamp();
     // TODO(aalhendi): handle err maybe? HTTP 500
-    password_reset_token::store_token(user_id, &token, expires_at, &state.pool).await;
+    let store_token_result = password_reset_token::store_token(user_id, &token, expires_at, &state.pool).await;
+    if let Err(e) = store_token_result {
+        eprintln!("{e}");
+        return (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "Something went wrong",
+        )
+    }
 
     send_email(&post_data.email, &token).await;
     (
@@ -243,10 +247,10 @@ pub async fn reset_password(
                     password_reset_token::delete_token(token, &state.pool)
                         .await
                         .expect("Failed to delete token");
-                    return (StatusCode::OK, "Password updated".to_string());
+                    (StatusCode::OK, "Password updated".to_string())
                 }
                 Err(_) => {
-                    return (
+                    (
                         StatusCode::INTERNAL_SERVER_ERROR,
                         "Failed to update password".to_string(),
                     )
@@ -254,13 +258,13 @@ pub async fn reset_password(
             }
         }
         Ok(None) => {
-            return (
+            (
                 StatusCode::BAD_REQUEST,
                 "Invalid or expired token".to_string(),
             )
         }
         Err(_) => {
-            return (
+            (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "An error occurred".to_string(),
             )
@@ -389,5 +393,5 @@ pub async fn save_settings(
         user::update_settings(requesting_user.id, battletag, role, &state.pool).await;
         return (StatusCode::OK, String::from("Updated"));
     }
-    return (StatusCode::BAD_REQUEST, String::from("no"));
+    (StatusCode::BAD_REQUEST, String::from("no"))
 }
