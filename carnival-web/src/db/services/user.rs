@@ -100,6 +100,7 @@ pub async fn create_user(
     role: &str,
     pool: &SqlitePool,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
+    println!("{username}:{password}:{battletag}:{email}:{role}");
     let hashed_pass = hash_password(password, HMAC_KEY, 12).unwrap();
     sqlx::query_file!(
         "sql/insert_user.sql",

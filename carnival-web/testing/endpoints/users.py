@@ -54,6 +54,8 @@ def post_get_response(*, endpoint, json_payload):
             f"http://localhost:3000/{endpoint}",
             json=json_payload,
             headers={"Content-Type": "application/json"})
+    # ???? is this returning None???? For just one test???
+    print(r)
     return Response(r.status_code, r.text)
 
 
@@ -172,7 +174,41 @@ class Register(Test):
         return post_get_response(endpoint="api/register", json_payload=payload)
 
 
+class JoinQueue(Test):
+    def __init__(self):
+        super().__init__("JoinQueue", Response(200, None))
+    
+    def test(self) -> Response:
+        s = requests.Session()
+        r = s.post("http://localhost:3000/api/login", json={"username": "DummyDPS1", "password": "123"}, headers={"Content-Type": "application/json"})
+        if r.status_code == 200:
+            queue_resp = s.post("http://localhost:3000/api/join_queue", json={"queue_id": "1"}, headers={"Content-Type": "application/json"})
+            return Response(queue_resp.status_code, None)
+        return Response(69, None)
+
+
+class LeaveQueue(Test):
+    def __init__(self):
+        super().__init__("LeaveQueue", Response(200, None))
+    
+    def test(self) -> Response:
+        s = requests.Session()
+        r = s.post("http://localhost:3000/api/login", json={"username": "DummyDPS1", "password": "123"}, headers={"Content-Type": "application/json"})
+        if r.status_code == 200:
+            queue_resp = s.post("http://localhost:3000/api/leave_queue", json={"queue_id": "1"}, headers={"Content-Type": "application/json"})
+            return Response(queue_resp.status_code, None)
+        return Response(69, None)
+
+
 def test_users():
+    join_queue = JoinQueue()
+    join_queue_resp = join_queue.test()
+    join_queue.check(join_queue_resp)
+
+    leave_queue = LeaveQueue()
+    leave_queue_resp = leave_queue.test()
+    leave_queue.check(leave_queue_resp)
+
     register = Register()
     register_resp = register.test()
     register.check(register_resp)

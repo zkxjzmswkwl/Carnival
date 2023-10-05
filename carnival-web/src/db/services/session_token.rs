@@ -48,17 +48,22 @@ pub async fn create(ip: &str, user_id: i32, pool: &SqlitePool) -> Option<String>
 }
 
 pub async fn token_by_user_id(user_id: i32, pool: &SqlitePool) -> Option<SessionToken> {
-    let token = sqlx::query_as::<_, SessionToken>(
+    let token_result = sqlx::query_as::<_, SessionToken>(
         "SELECT * FROM session_tokens WHERE for_user = $1 AND is_valid = 1",
     )
     .bind(user_id)
     .fetch_one(pool)
     .await;
 
-    if token.is_ok() {
-        return Some(token.unwrap());
+    match token_result {
+        Ok(token) => Some(token),
+        Err(e) => { eprintln!("{e}"); None }
     }
-    None
+
+    // if token_result.is_ok() {
+    //     return Some(token_result.unwrap());
+    // }
+    // None
 }
 
 #[allow(dead_code)]

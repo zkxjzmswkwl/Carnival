@@ -52,7 +52,7 @@ pub struct OverwatchMatch {
     // 0 - Needs to be sent to matchserver
     // 1 - Matchserver has received match data.
     // 2 - Matchserver has configured the lobby and invited players
-    // 3 - Ongoing
+    // 3 - In game 
     // 4 - Completed
     pub status: u8,
 }
