@@ -7,7 +7,8 @@ pub struct RegisterInput {
     pub password: String,
     pub password_conf: String,
     pub battletag: String,
-    pub email: String
+    pub email: String,
+    pub bracket_key: String
 }
 
 #[derive(Deserialize)]

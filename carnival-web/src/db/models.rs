@@ -95,3 +95,10 @@ pub struct BracketThruTable {
     pub user_id: i32,
     pub bracket_id: i32
 }
+
+#[derive(FromRow)]
+pub struct BracketKey {
+    pub id: i32,
+    pub bracket_id: i32,
+    pub key: String
+}
