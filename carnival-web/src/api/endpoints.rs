@@ -22,6 +22,7 @@ use http::{HeaderValue, StatusCode, HeaderMap};
 use lettre::{Message, SmtpTransport, Transport};
 use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
+use sqlx::SqlitePool;
 use static_str_ops::static_format;
 use uuid::Uuid;
 
@@ -30,9 +31,9 @@ use super::payloads::{JoinQueueInput, LeaveQueueInput, UpdateSettingsInput, Forg
 async fn validate_session_cookie(
     user_id: i32,
     ip: &str,
-    state: &CarnyState,
+    pool : &SqlitePool,
 ) -> bool {
-    match session::validate(ip, user_id, &state.pool).await {
+    match session::validate(ip, user_id, pool).await {
         Some(_) => return true,
         None => return false,
     }
@@ -89,7 +90,6 @@ pub async fn register(
         Ok(_) => {
             let redirect_js = fs::read_to_string("static/js/redirect_register.js")
                 .unwrap_or("User created. Error redirecting.".to_string());
-
             (
                 StatusCode::CREATED,
                 format!("<script>{}</script>", redirect_js),
@@ -162,7 +162,9 @@ pub async fn login(
         match session::validate(&remote_addr, user.id, &state.pool).await {
             // If it hasn't, cool. Set the cookie and be done with it.
             Some(session) => {
+                // Wait why the fuck is the message "User created" - This is the login?
                 let redirect_js = fs::read_to_string("static/js/redirect_login.js")
+                    // I did this?????? LOl
                     .unwrap_or("User created. Error redirecting.".to_string());
 
                 *r.status_mut() = StatusCode::OK;
@@ -302,7 +304,7 @@ pub async fn join_queue(
 
     let queue_id_i32: i32 = post_data.queue_id.parse().unwrap_or_default();
     if let Some(requesting_user) = user::from_cookies(&cookies, &state.pool).await {
-        if !validate_session_cookie(requesting_user.id, &remote_addr, &state).await {
+        if !validate_session_cookie(requesting_user.id, &remote_addr, &state.pool).await {
             return (
                 StatusCode::NOT_ACCEPTABLE,
                 "Detected some funky stuff. Token invalidated.".to_string(),
@@ -327,7 +329,7 @@ pub async fn join_queue(
             // ? - I don't want to go through shit and make everything (StatusCode, Option<String>)
             // but maybe it's worth it? idk. don't want to. 🐒
             return (
-                StatusCode::CREATED,
+                StatusCode::OK,
                 build_queue_comp(&cookies, &state.pool).await,
             );
         }
@@ -344,7 +346,7 @@ pub async fn leave_queue(
     Json(post_data): Json<LeaveQueueInput>,
 ) -> (StatusCode, String) {
 
-    let mut remote_addr = String::from("");
+    let mut remote_addr = String::from("127.0.0.1");
     if let Some(addr_header_val) = headers.get("x-real-ip") {
         // cant be fucked right now.
         remote_addr = addr_header_val.to_str().unwrap().to_string();
@@ -356,7 +358,7 @@ pub async fn leave_queue(
     // You're welcome 😎
     let queue_id_i32: i32 = post_data.queue_id.parse().unwrap_or_default();
     if let Some(requesting_user) = user::from_cookies(&cookies, &state.pool).await {
-        if !validate_session_cookie(requesting_user.id, &remote_addr, &state).await {
+        if !validate_session_cookie(requesting_user.id, &remote_addr, &state.pool).await {
             return (
                 StatusCode::NOT_ACCEPTABLE,
                 "Detected some funky stuff. Token invalidated.".to_string(),

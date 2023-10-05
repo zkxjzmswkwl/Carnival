@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
         losses INTEGER DEFAULT 0,
         username VARCHAR(250) UNIQUE NOT NULL,
         password VARCHAR(250) NOT NULL,
+        email VARCHAR(250) UNIQUE NOT NULL,
         battletag VARCHAR(17) UNIQUE NOT NULL);
 CREATE TABLE IF NOT EXISTS session_tokens (
         for_user INT NOT NULL,
@@ -41,4 +42,13 @@ CREATE TABLE IF NOT EXISTS queued_players (
             queue_id INTEGER NOT NULL,
             user_id INTEGER UNIQUE NOT NULL,
             role VARCHAR(16) NOT NULL
+        );
+CREATE TABLE IF NOT EXISTS
+        password_reset_tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,               -- Primary key implies not null & unique
+            user_id INTEGER UNIQUE NOT NULL,                    -- foreign key to users table 1:1
+            token VARCHAR(36) UNIQUE NOT NULL,                  -- can technically be char cause UUID length is fixed 
+            created_at INTEGER DEFAULT (strftime('%s', 'now')), -- DATETIME exists but something something SQLx compatibility
+            expires_at INTEGER NOT NULL,                        -- maybe we can make it compatible... but I cba
+            FOREIGN KEY(user_id) REFERENCES users(id)           -- foreign key constraint
         );
