@@ -160,13 +160,28 @@ async fn websocket(stream: WebSocket, state: CarnyState) {
                 }
             }
 
-            // Matchserver is letting us know it has the match data for a match we've just sent it.
-            if recv == "match ack" {
-                // Need to update that match's row to show that it no longer needs to be sent to a matchserver
-                // We stored it in `current_match`.                                 1 = matchserver has the match.
-                overwatch_match::set_match_status(current_match.overwatch_match.id, 1, &state.pool).await;
+            match recv.as_str() {
+                // Matchserver is letting us know it has the match data for a match we've just sent it.
+                "match ack" => {
+                    // Need to update that match's row to show that it no longer needs to be sent to a matchserver
+                    // We stored it in `current_match`.                                 1 = matchserver has the match.
+                    overwatch_match::set_match_status(current_match.overwatch_match.id, 1, &state.pool).await;
+                },
+                "match lobby" => {
+                    sender.send(Message::Text(String::from("ack"))).await;
+                    overwatch_match::set_match_status(current_match.overwatch_match.id, 2, &state.pool).await;
+                },
+                "match ingame" => {
+                    sender.send(Message::Text(String::from("ack"))).await;
+                    overwatch_match::set_match_status(current_match.overwatch_match.id, 3, &state.pool).await;
+                },
+                // TODO: The matchserver needs to tell us who the winner is.
+                "match completed" => {
+                    sender.send(Message::Text(String::from("ack"))).await;
+                    overwatch_match::set_match_status(current_match.overwatch_match.id, 4, &state.pool).await;
+                }
+                _ => {}
             }
-            sender.send(Message::Text(String::from("ack"))).await;
         }
     }
 }
