@@ -6,13 +6,27 @@ pub struct RegisterInput {
     pub role: String,
     pub password: String,
     pub password_conf: String,
-    pub battletag: String
+    pub battletag: String,
+    pub email: String,
+    pub bracket_key: String
 }
 
 #[derive(Deserialize)]
 pub struct LoginInput {
     pub username: String,
     pub password: String
+}
+
+#[derive(Deserialize)]
+pub struct ForgotPasswordInput {
+    pub email: String,
+}
+
+
+#[derive(Deserialize)]
+pub struct ResetPasswordInput {
+    pub token: String,
+    pub new_password: String,
 }
 
 // See LeaveQueueInput comment.

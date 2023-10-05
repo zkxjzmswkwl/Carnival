@@ -2,7 +2,7 @@
 extern crate dotenv_codegen;
 
 use crate::db::queries::tables;
-use api::endpoints::{join_queue, leave_queue, login, register, save_settings};
+use api::endpoints::{join_queue, leave_queue, login, register, save_settings, forgot_password, reset_password};
 use axum::{
     extract::ws::{Message, WebSocket, WebSocketUpgrade},
     extract::State,
@@ -22,7 +22,6 @@ use rendering::routes::{
 };
 use sqlx::{migrate::MigrateDatabase, Sqlite, SqlitePool};
 use std::{env, net::SocketAddr};
-use tokio::sync::mpsc;
 use tower_http::cors::{Any, CorsLayer};
 
 mod api;
@@ -91,6 +90,15 @@ async fn create_tables(pool: &SqlitePool) {
         "Queued Players table creation -> {:?}",
         create_queued_players_result
     );
+
+    let create_password_reset_token_result = sqlx::query(&tables::CREATE_QUEUED_PLAYERS)
+    .execute(pool)
+    .await
+    .unwrap();
+    println!(
+        "Password Reset Token table creation -> {:?}",
+         create_password_reset_token_result
+    );
 }
 
 #[derive(Clone)]
@@ -152,13 +160,28 @@ async fn websocket(stream: WebSocket, state: CarnyState) {
                 }
             }
 
-            // Matchserver is letting us know it has the match data for a match we've just sent it.
-            if recv == "match ack" {
-                // Need to update that match's row to show that it no longer needs to be sent to a matchserver
-                // We stored it in `current_match`.                                 1 = matchserver has the match.
-                overwatch_match::set_match_status(current_match.overwatch_match.id, 1, &state.pool).await;
+            match recv.as_str() {
+                // Matchserver is letting us know it has the match data for a match we've just sent it.
+                "match ack" => {
+                    // Need to update that match's row to show that it no longer needs to be sent to a matchserver
+                    // We stored it in `current_match`.                                 1 = matchserver has the match.
+                    overwatch_match::set_match_status(current_match.overwatch_match.id, 1, &state.pool).await;
+                },
+                "match lobby" => {
+                    sender.send(Message::Text(String::from("ack"))).await;
+                    overwatch_match::set_match_status(current_match.overwatch_match.id, 2, &state.pool).await;
+                },
+                "match ingame" => {
+                    sender.send(Message::Text(String::from("ack"))).await;
+                    overwatch_match::set_match_status(current_match.overwatch_match.id, 3, &state.pool).await;
+                },
+                // TODO: The matchserver needs to tell us who the winner is.
+                "match completed" => {
+                    sender.send(Message::Text(String::from("ack"))).await;
+                    overwatch_match::set_match_status(current_match.overwatch_match.id, 4, &state.pool).await;
+                }
+                _ => {}
             }
-            sender.send(Message::Text(String::from("ack"))).await;
         }
     }
 }
@@ -188,6 +211,7 @@ async fn main() {
         .route("/", get(index))
         .route("/login", get(login_route))
         .route("/register", get(register_route))
+        // TODO(aalhendi): build forgot pw page...
         .route("/settings/:settings_subroute", get(settings_route))
         .route("/queue", get(queue_route))
         .route("/play", get(queue_route))
@@ -208,6 +232,8 @@ async fn main() {
         // Endpoints
         .route("/api/register", post(register))
         .route("/api/login", post(login))
+        .route("/api/forgot-password", post(forgot_password))
+        .route("/api/reset-password/", post(reset_password))
         .route("/api/join_queue", post(join_queue))
         .route("/api/leave_queue", post(leave_queue))
         .route("/api/settings_user", post(save_settings))

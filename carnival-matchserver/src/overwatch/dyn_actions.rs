@@ -39,7 +39,7 @@ impl DynamicActionChain {
         if team == 2 {
             ret.get_mut(2).unwrap().y = 906;
         }
-        Self { 0: ret }
+        Self(ret)
     }
 
     pub fn invoke(&self) {

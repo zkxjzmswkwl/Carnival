@@ -1,0 +1,1 @@
+select * from bracket_keys where key = ? LIMIT 1;
