@@ -343,7 +343,6 @@ pub async fn join_queue(
 
 #[axum_macros::debug_handler]
 pub async fn leave_queue(
-    // ConnectInfo(connection): ConnectInfo<SocketAddr>,
     headers: HeaderMap,
     TypedHeader(cookies): TypedHeader<Cookie>,
     State(state): State<CarnyState>,

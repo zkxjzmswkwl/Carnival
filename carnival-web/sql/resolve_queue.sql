@@ -1,6 +1,10 @@
 select
     users.username,
     users.id,
+    users.rating,
+    users.wins,
+    users.losses,
+    users.battletag,
     queued_players.role
 FROM
     (
