@@ -1,7 +1,7 @@
 use std::fs;
 
 use crate::db::services::queue::pop_queue;
-use crate::db::services::{session_token as session, password_reset_token};
+use crate::db::services::{bracket, password_reset_token, session_token as session};
 use crate::{
     api::payloads::{LoginInput, RegisterInput},
     db::services::{queue, user},
@@ -15,24 +15,22 @@ use axum::{
     response::Response,
     Json, TypedHeader,
 };
-use chrono::{Utc, Duration};
+use chrono::{Duration, Utc};
 use easy_password::bcrypt::verify_password;
 use headers::Cookie;
-use http::{HeaderValue, StatusCode, HeaderMap};
-use lettre::{Message, SmtpTransport, Transport};
+use http::{HeaderMap, HeaderValue, StatusCode};
 use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
+use lettre::{Message, SmtpTransport, Transport};
 use sqlx::SqlitePool;
 use static_str_ops::static_format;
 use uuid::Uuid;
 
-use super::payloads::{JoinQueueInput, LeaveQueueInput, UpdateSettingsInput, ForgotPasswordInput, ResetPasswordInput};
+use super::payloads::{
+    ForgotPasswordInput, JoinQueueInput, LeaveQueueInput, ResetPasswordInput, UpdateSettingsInput,
+};
 
-async fn validate_session_cookie(
-    user_id: i32,
-    ip: &str,
-    pool : &SqlitePool,
-) -> bool {
+async fn validate_session_cookie(user_id: i32, ip: &str, pool: &SqlitePool) -> bool {
     match session::validate(ip, user_id, pool).await {
         Some(_) => return true,
         None => return false,
@@ -49,6 +47,7 @@ pub async fn register(
     let role: &str = &post_data.role;
     let password: &str = &post_data.password;
     let password_conf: &str = &post_data.password_conf;
+    let bracket_key: &str = &post_data.bracket_key;
 
     if !vec!["Tank", "DPS", "Support"]
         .iter()
@@ -78,16 +77,23 @@ pub async fn register(
         );
     }
 
-    
     if user::does_email_exist(email, &state.pool).await {
+        return (StatusCode::BAD_REQUEST, "Email already exists".to_string());
+    }
+
+    if !bracket::does_key_exist(bracket_key, &state.pool).await {
         return (
             StatusCode::BAD_REQUEST,
-            "Email already exists".to_string(),
+            "Bracket key does not exist.".to_string(),
         );
     }
 
     match user::create_user(username, password, battletag, email, role, &state.pool).await {
-        Ok(_) => {
+        Ok(query_result) => {
+            // If the user provided a bracket key that wasn't default, add them to that bracket.
+            if let Some(bracket) = bracket::by_key(bracket_key, &state.pool).await {
+                bracket::add_user(query_result.last_insert_rowid(), bracket.id, &state.pool).await;
+            }
             let redirect_js = fs::read_to_string("static/js/redirect_register.js")
                 .unwrap_or("User created. Error redirecting.".to_string());
             (
@@ -173,11 +179,8 @@ pub async fn login(
                 let cookies_json = serde_json::to_string(&session).unwrap().to_string();
                 r.headers_mut().insert(
                     "Set-Cookie",
-                    HeaderValue::from_str(static_format!(
-                        "session_id={};path=/;",
-                        cookies_json,
-                    ))
-                    .unwrap(),
+                    HeaderValue::from_str(static_format!("session_id={};path=/;", cookies_json,))
+                        .unwrap(),
                 );
                 // who u be men?
                 // r.headers_mut().insert(
@@ -219,8 +222,11 @@ pub async fn forgot_password(
     // TODO(aalhendi): handle err maybe? HTTP 500
     password_reset_token::store_token(user_id, &token, expires_at, &state.pool).await;
 
-    send_email(&post_data.email, &token).await; 
-    (StatusCode::OK, "Email will be sent if it exists in records :)")
+    send_email(&post_data.email, &token).await;
+    (
+        StatusCode::OK,
+        "Email will be sent if it exists in records :)",
+    )
 }
 
 pub async fn reset_password(
@@ -273,7 +279,6 @@ async fn send_email(recipient_email: &str, token: &str) {
         .body(format!("Here is your password reset token: {}", token))
         .unwrap();
 
-
     let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
 
     // Open a remote connection to gmail
@@ -295,7 +300,6 @@ pub async fn join_queue(
     State(state): State<CarnyState>,
     Json(post_data): Json<JoinQueueInput>,
 ) -> (StatusCode, String) {
-
     let mut remote_addr = String::from("127.0.0.1");
     if let Some(addr_header_val) = headers.get("x-real-ip") {
         // cant be fucked right now.
@@ -345,7 +349,6 @@ pub async fn leave_queue(
     State(state): State<CarnyState>,
     Json(post_data): Json<LeaveQueueInput>,
 ) -> (StatusCode, String) {
-
     let mut remote_addr = String::from("127.0.0.1");
     if let Some(addr_header_val) = headers.get("x-real-ip") {
         // cant be fucked right now.
@@ -380,7 +383,6 @@ pub async fn save_settings(
     TypedHeader(cookies): TypedHeader<Cookie>,
     Json(post_data): Json<UpdateSettingsInput>,
 ) -> (StatusCode, String) {
-
     if let Some(requesting_user) = user::from_cookies(&cookies, &state.pool).await {
         println!("{:#?}", requesting_user);
         let battletag: &str = &post_data.battletag;
