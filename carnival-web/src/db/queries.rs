@@ -66,8 +66,11 @@ pub mod tables {
             FOREIGN KEY(user_id) REFERENCES users(id)           -- foreign key constraint
         );";
 
-    pub const CREATE_BRACKETS: &str =
-        "create table if not exists brackets(id integer primary key, queue_id not null);";
+    pub const CREATE_BRACKETS: &str = "create table if not exists 
+        brackets(
+            id integer primary key, queue_id not null
+        );";
+
     pub const CREATE_BRACKETS_THRU: &str = "create table if not exists brackets_thru(id integer primary key, user_id integer not null, bracket_id integer not null);";
     pub const CREATE_BRACKET_KEYS: &str = "create table if not exists bracket_keys (id integer primary key not null, bracket_id integer not null, key varchar(250) not null);";
 }

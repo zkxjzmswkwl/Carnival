@@ -39,9 +39,12 @@ pub async fn delete_user_from_queue(
 #[derive(Default, Debug)]
 pub struct ResolvedQueuePlayer {
     pub username: String,
-    // User id
+    pub battletag: String,
     pub id: i32,
-    pub role: String
+    pub role: String,
+    pub rating: i32,
+    pub wins: i32,
+    pub losses: i32
 }
 
 pub async fn players_in_queue(

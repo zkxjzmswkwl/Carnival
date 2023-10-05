@@ -152,8 +152,16 @@ pub async fn leaderboard_comp(State(state): State<CarnyState>) -> String {
 }
 
 pub async fn base(pool: &SqlitePool, cookies: &Cookie) -> String {
-    let authed_items = [("Leaderboard", "leaderboard"), ("Play", "play"), ("Settings", "settings/user")];
-    let noauth_items = [("Leaderboard", "leaderboard"), ("Register", "register"), ("Login", "login")];
+    let authed_items = [
+        ("Leaderboard", "leaderboard"),
+        ("Play", "play"),
+        ("Settings", "settings/user"),
+    ];
+    let noauth_items = [
+        ("Leaderboard", "leaderboard"),
+        ("Register", "register"),
+        ("Login", "login"),
+    ];
 
     let user_option = user::from_cookies(&cookies, pool).await;
     let user = user_option.unwrap_or_default();
@@ -162,19 +170,11 @@ pub async fn base(pool: &SqlitePool, cookies: &Cookie) -> String {
 
     if user.id == 0 {
         for item in noauth_items {
-            header_list.push_str(&format!(
-                "<li><a href=\"/{}\">{}</a></li>",
-                item.1,
-                item.0
-            ))
+            header_list.push_str(&format!("<li><a href=\"/{}\">{}</a></li>", item.1, item.0))
         }
     } else {
         for item in authed_items {
-            header_list.push_str(&format!(
-                "<li><a href=\"/{}\">{}</a></li>",
-                item.1,
-                item.0
-            ))
+            header_list.push_str(&format!("<li><a href=\"/{}\">{}</a></li>", item.1, item.0))
         }
     }
 
@@ -185,7 +185,7 @@ pub async fn build_queue_comp(cookies: &Cookie, pool: &SqlitePool) -> String {
     // Only care about one queue for now
     let resolved_user = user::from_cookies(&cookies, pool).await;
     if resolved_user.is_none() {
-        return "Couldn't be authenticated".to_string();
+        return "<div class=\"text-xl text-center\">Couldn't be authenticated</div>".to_string();
     }
 
     let resolved_queue = ResolvedQueue::from_id(1, pool).await;
@@ -194,15 +194,30 @@ pub async fn build_queue_comp(cookies: &Cookie, pool: &SqlitePool) -> String {
     let mut support_rows = String::new();
 
     for tank in resolved_queue.tanks.iter() {
-        tank_rows.push_str(&utils::generate_table_row(&[&tank.username, &tank.role]));
+        tank_rows.push_str(&utils::generate_table_row(&[
+            &tank.battletag,
+            &tank.role,
+            &tank.rating.to_string(),
+            &tank.wins.to_string(),
+            &tank.losses.to_string(),
+        ]));
     }
     for dps in resolved_queue.dps.iter() {
-        dps_rows.push_str(&utils::generate_table_row(&[&dps.username, &dps.role]));
+        dps_rows.push_str(&utils::generate_table_row(&[
+            &dps.battletag,
+            &dps.role,
+            &dps.rating.to_string(),
+            &dps.wins.to_string(),
+            &dps.losses.to_string(),
+        ]));
     }
     for support in resolved_queue.supports.iter() {
         support_rows.push_str(&utils::generate_table_row(&[
-            &support.username,
+            &support.battletag,
             &support.role,
+            &support.rating.to_string(),
+            &support.wins.to_string(),
+            &support.losses.to_string(),
         ]));
     }
 
