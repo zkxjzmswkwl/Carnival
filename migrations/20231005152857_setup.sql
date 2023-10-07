@@ -1,3 +1,4 @@
+-- Add migration script here
 CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY UNIQUE NOT NULL,
         role VARCHAR(30) NOT NULL,
