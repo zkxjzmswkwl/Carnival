@@ -38,8 +38,8 @@ async fn main() -> Result<()> {
     
     // None of this shit will ever fire until ^ todo is done.
     let config = Config::load();
-    println!("{config:#?}");
 
+    // Setup ipc so the websocket connection thread can pass game objects to the main thread.
     let (tx, rx) = mpsc::channel::<String>();
     let connection_thread = thread::spawn(move || {
         connection::connect(tx);
@@ -56,6 +56,7 @@ async fn main() -> Result<()> {
         if let Ok(recv) = rx.recv() {
             match serde_json::from_str::<ResolvedOverwatchMatch>(&recv) {
                 Ok(resolved_match) => {
+                    overwatch::prelude()?;
                     println!("{:#?}", resolved_match);
                     action_chains
                         .invoke_chain("custom_lobby")
