@@ -27,21 +27,18 @@ async fn main() -> Result<()> {
         .with_max_level(log_level)
         .init();
 
-    let mut _state_handler: StateHandler = StateHandler::default();
-    // state_handler.restore();
-    // println!("{state_handler:#?}");
-
+    overwatch::prelude()?;
+    let mut state_handler: StateHandler = StateHandler::default();
     let config = Config::load();
-    println!("{config:#?}");
 
+    // Setup ipc so the websocket connection thread can pass game objects to the main thread.
     let (tx, rx) = mpsc::channel::<String>();
     // Need to clone the sender so we are able to pass the original to the websocket connection thread
     // since Sender/Receivers are not threadsafe. 
     let tx1 = tx.clone();
 
     thread::spawn(move || {
-        log::info!("{:#?}", thread::current().id());
-        connection::connect(tx);
+        connection::connect(tx, &mut state_handler.game_state);
     });
 
     let mut action_chains = overwatch::static_actions::ActionChain::default();
