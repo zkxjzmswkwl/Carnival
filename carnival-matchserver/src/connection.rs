@@ -3,9 +3,11 @@ use std::{sync::mpsc, thread, time::Duration};
 use tungstenite::Message;
 use url::Url;
 
+use crate::overwatch::game_state::GameState;
 
-pub fn connect(ipc: mpsc::Sender<String>) {
-    let (mut socket, _resp) = tungstenite::connect(Url::parse("wss://carnival.ryswick.net/ws/notifications").unwrap())
+
+pub fn connect(ipc: mpsc::Sender<String>, game_state: &mut GameState) {
+    let (mut socket, _resp) = tungstenite::connect(Url::parse("ws://127.0.0.1:3000/ws/notifications").unwrap())
         .expect("No connection made.");
 
     // Authenticate with proper matchserver token (generated)
@@ -14,6 +16,11 @@ pub fn connect(ipc: mpsc::Sender<String>) {
         log::info!("{}", auth_resp.to_string());
 
         loop {
+            if game_state.has_game {
+                log::debug!("GameState's has_game is true, not asking the webserver for another match.");
+                thread::sleep(Duration::from_secs(5));
+                continue;
+            }
             // Send a ping every few seconds.
             socket.send(Message::Text("match?".into())).unwrap();
 
