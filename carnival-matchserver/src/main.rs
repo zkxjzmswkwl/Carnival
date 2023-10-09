@@ -22,7 +22,7 @@ async fn main() -> Result<()> {
         .pretty()
         .with_max_level(log_level)
         .init();
-
+ 
     unsafe {
         let tank: Tank = Tank::new();
         // We can't assume the initial frame rate - so we can't look for `FPS: 60`.
@@ -53,15 +53,16 @@ async fn main() -> Result<()> {
     }
     
     let mut _state_handler: StateHandler = StateHandler::default();
-    // state_handler.restore();
-    // println!("{state_handler:#?}");
-
     let config = Config::load();
-    println!("{config:#?}");
 
+    // Setup ipc so the websocket connection thread can pass game objects to the main thread.
     let (tx, rx) = mpsc::channel::<String>();
+    // Need to clone the sender so we are able to pass the original to the websocket connection thread
+    // since Sender/Receivers are not threadsafe. 
+    let tx1 = tx.clone();
+
     thread::spawn(move || {
-        connection::connect(tx);
+        connection::connect(tx, &mut state_handler.game_state);
     });
 
     let mut action_chains = overwatch::static_actions::ActionChain::default();
@@ -72,6 +73,7 @@ async fn main() -> Result<()> {
         if let Ok(recv) = rx.recv() {
             match serde_json::from_str::<ResolvedOverwatchMatch>(&recv) {
                 Ok(resolved_match) => {
+                    overwatch::prelude()?;
                     println!("{:#?}", resolved_match);
                     action_chains
                         .invoke_chain("custom_lobby")
