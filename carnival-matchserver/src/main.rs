@@ -41,8 +41,12 @@ async fn main() -> Result<()> {
 
     // Setup ipc so the websocket connection thread can pass game objects to the main thread.
     let (tx, rx) = mpsc::channel::<String>();
+    // Need to clone the sender so we are able to pass the original to the websocket connection thread
+    // since Sender/Receivers are not threadsafe. 
+    let tx1 = tx.clone();
+
     let connection_thread = thread::spawn(move || {
-        connection::connect(tx);
+        connection::connect(tx, &mut state_handler.game_state);
     });
 
     log::info!("Connection thread id {:#?}", connection_thread.thread().id());
