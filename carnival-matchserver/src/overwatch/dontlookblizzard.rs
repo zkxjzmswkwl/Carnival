@@ -9,14 +9,27 @@ use windows::Win32::{
         Diagnostics::Debug::ReadProcessMemory,
         Memory::{
             VirtualQueryEx, MEMORY_BASIC_INFORMATION,
-            PAGE_PROTECTION_FLAGS,
+            PAGE_PROTECTION_FLAGS, MEM_COMMIT, MEM_PRIVATE,
         },
         Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ},
     },
     UI::WindowsAndMessaging::GetWindowThreadProcessId,
 };
 
-const PAGE_MASK: PAGE_PROTECTION_FLAGS = PAGE_PROTECTION_FLAGS(64u32 | 128u32 | 4u32 | 8u32);
+const PAGE_MASK: PAGE_PROTECTION_FLAGS = PAGE_PROTECTION_FLAGS(4u32);
+
+#[derive(Debug)]
+pub struct ScanResult<T> {
+    pub address: u64,
+    pub value: T
+}
+
+impl ScanResult<String> {
+    pub fn new(address: u64, value: String) -> Self {
+        Self { address, value }
+    }
+}
+
 
 pub struct Tank(HANDLE);
 
@@ -89,17 +102,26 @@ impl Tank {
         }
     }
 
-    pub unsafe fn find_str(&self, input: &str) -> Vec<(u64, String)> {
-        let mut ret: Vec<(u64, String)> = Vec::new();
+    pub unsafe fn find_str(&self, input: &str, size: usize) -> Vec<ScanResult::<String>> {
+        let mut ret: Vec<ScanResult::<String>> = Vec::new();
         let input_bytes: &[u8] = input.as_bytes();
         let pages = self.page_info();
-        let range = pages
+        let filtered_pages = pages
             .iter()
-            .filter(|page| page.Protect & PAGE_MASK != PAGE_PROTECTION_FLAGS(0))
+            .filter(|page| {
+                page.Protect & PAGE_MASK != PAGE_PROTECTION_FLAGS(0)
+                    && page.State == MEM_COMMIT
+                    && page.Type == MEM_PRIVATE
+                    // && VALID_REGION_SIZES.contains(&page.RegionSize)
+                    && page.PartitionId == 0
+                    && page.AllocationProtect == PAGE_PROTECTION_FLAGS(4)
+            })
             .collect::<Vec<_>>();
 
+         println!("Filtered page count: {}", filtered_pages.len());
+
         // TODO: Split this up when I find fucks to give (I will do it tomorrow)
-        range.iter().for_each(|sub_range| {
+        filtered_pages.iter().for_each(|sub_range| {
             let read_res = self.yoink_bytes(sub_range.BaseAddress as _, sub_range.RegionSize);
             if !read_res.is_none() {
                 read_res.unwrap()
@@ -108,8 +130,10 @@ impl Tank {
                     .for_each(|(offset, window)| {
                         if window == input_bytes {
                             let location = sub_range.BaseAddress as u64 + offset as u64;
-                            if let Some(read_str) = self.read_str(location, input_bytes.len()) {
-                                ret.push((location, read_str));
+                            if let Some(read_str) = self.read_str(location, size) {
+                                println!("{:X}: {}", location, read_str);
+                                let scan_result = ScanResult::new(location, read_str);
+                                ret.push(scan_result);
                             }
                         }
                     });
@@ -118,10 +142,10 @@ impl Tank {
             ret
         }
 
-    pub unsafe fn retain_valid(&self, prev_scan: &mut Vec<(u64, String)>) {
+    pub unsafe fn retain_valid(&self, prev_scan: &mut Vec<ScanResult::<String>>) {
         prev_scan.retain(|prev_result| {
-            if let Some(read) = self.read_str(prev_result.0, prev_result.1.len()) {
-                read == prev_result.1
+            if let Some(read) = self.read_str(prev_result.address, prev_result.value.len()) {
+                read == prev_result.value
             } else {
                 false
             }
