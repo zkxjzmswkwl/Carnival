@@ -169,20 +169,32 @@ async fn websocket(stream: WebSocket, state: CarnyState) {
                 "match ack" => {
                     // Need to update that match's row to show that it no longer needs to be sent to a matchserver
                     // We stored it in `current_match`.                                 1 = matchserver has the match.
-                    overwatch_match::set_match_status(current_match.overwatch_match.id, 1, &state.pool).await;
+                    match overwatch_match::set_match_status(current_match.overwatch_match.id, 1, &state.pool).await {
+                        Ok(_) => {},
+                        Err(e) => eprintln!("{e}")
+                    }
                 },
                 "match lobby" => {
-                    sender.send(Message::Text(String::from("ack"))).await;
-                    overwatch_match::set_match_status(current_match.overwatch_match.id, 2, &state.pool).await;
+                    // sender.send(Message::Text(String::from("ack"))).await;
+                    match overwatch_match::set_match_status(current_match.overwatch_match.id, 2, &state.pool).await {
+                        Ok(_) => {},
+                        Err(e) => eprintln!("{e}")
+                    }
                 },
                 "match ingame" => {
-                    sender.send(Message::Text(String::from("ack"))).await;
-                    overwatch_match::set_match_status(current_match.overwatch_match.id, 3, &state.pool).await;
+                    // sender.send(Message::Text(String::from("ack"))).await;
+                    match overwatch_match::set_match_status(current_match.overwatch_match.id, 3, &state.pool).await {
+                        Ok(_) => {},
+                        Err(e) => eprintln!("{e}")
+                    }
                 },
                 // TODO: The matchserver needs to tell us who the winner is.
                 "match completed" => {
-                    sender.send(Message::Text(String::from("ack"))).await;
-                    overwatch_match::set_match_status(current_match.overwatch_match.id, 4, &state.pool).await;
+                    // sender.send(Message::Text(String::from("ack"))).await;
+                    match overwatch_match::set_match_status(current_match.overwatch_match.id, 4, &state.pool).await {
+                        Ok(_) => {},
+                        Err(e) => eprintln!("{e}")
+                    }
                 }
                 _ => {}
             }
