@@ -25,21 +25,33 @@ async fn main() -> Result<()> {
 
     unsafe {
         let tank: Tank = Tank::new();
-        let mut str_test = tank.find_str("PLAY");
+        // We can't assume the initial frame rate - so we can't look for `FPS: 60`.
+        // The display fluxuates between 60/59 each frame.
+        // So we can for the only constant value in the fps counter,
+        // then read a few bytes past that to grab current fps.
+        let str_test = tank.find_str("FPS: ", 8);
+
+        loop {
+            for result in &str_test {
+                if let Some(new) = tank.read_str(result.address, 9) {
+                    println!("{:X}: {}", result.address, new);
+                }
+            }
+        }
         str_test
             .iter()
-            .for_each(|str| println!("{} @ 0x{:X}", str.1, str.0));
+            .for_each(|str| println!("{} @ 0x{:X}", str.value, str.address));
         println!("Count pre filter: {}", str_test.len());
         println!("==================================================");
         thread::sleep(time::Duration::from_millis(3000));
         tank.retain_valid(&mut str_test);
         str_test
             .iter()
-            .for_each(|str| println!("{} @ 0x{:X}", str.1, str.0));
+            .for_each(|str| println!("{} @ 0x{:X}", str.value, str.address));
         println!("Count post filter: {}", str_test.len());
         println!("==================================================");
     }
-
+    
     let mut _state_handler: StateHandler = StateHandler::default();
     // state_handler.restore();
     // println!("{state_handler:#?}");
