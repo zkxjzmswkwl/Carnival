@@ -235,7 +235,6 @@ pub async fn build_queue_comp(cookies: &Cookie, pool: &SqlitePool) -> String {
     )
 }
 
-/// Serves purely static data atm. Will finish when I wake up - Carter
 pub async fn queue_table(
     State(state): State<CarnyState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
