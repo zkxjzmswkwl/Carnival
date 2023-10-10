@@ -36,6 +36,7 @@ impl StateHandler {
         }
     }
 
+    #[allow(dead_code)]
     pub fn restore(&mut self) {
         let json =
             read_to_string("state_handler.toml").expect("state_handler.json: failed to read");

@@ -2,7 +2,10 @@ use core::time;
 use std::{
     collections::HashMap,
     ffi::c_void,
-    mem::{size_of, MaybeUninit}, sync::mpsc::{Sender, self}, thread, time::Instant,
+    mem::{size_of, MaybeUninit},
+    sync::mpsc::{self, Sender},
+    thread,
+    time::Instant,
 };
 
 use windows::Win32::{
@@ -10,15 +13,16 @@ use windows::Win32::{
     System::{
         Diagnostics::Debug::ReadProcessMemory,
         Memory::{
-            VirtualQueryEx, MEMORY_BASIC_INFORMATION, MEM_COMMIT,
-            PAGE_PROTECTION_FLAGS, PAGE_TYPE, VIRTUAL_ALLOCATION_TYPE,
+            VirtualQueryEx, MEMORY_BASIC_INFORMATION, MEM_COMMIT, PAGE_PROTECTION_FLAGS, PAGE_TYPE,
+            VIRTUAL_ALLOCATION_TYPE,
         },
         Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ},
     },
     UI::WindowsAndMessaging::GetWindowThreadProcessId,
 };
 
-const PAGE_PROTECTION_MASK: PAGE_PROTECTION_FLAGS = PAGE_PROTECTION_FLAGS(0x4 | 0x80 | 0x40 | 0x20 | 0x10);
+const PAGE_PROTECTION_MASK: PAGE_PROTECTION_FLAGS =
+    PAGE_PROTECTION_FLAGS(0x4 | 0x80 | 0x40 | 0x20 | 0x10);
 const PAGE_TYPE_MASK: PAGE_TYPE = PAGE_TYPE(131072u32 | 16777216u32);
 const STATE_STRINGS: &[&'static str] = &["2.6.1.1 - 116944", "Jump into", "tinder watch", "Add AI"];
 
@@ -37,6 +41,20 @@ pub struct THREADSAFE_MEMORY_BASIC_INFO {
     pub Type: PAGE_TYPE,
 }
 
+pub struct ProcessMemory {
+    pub pages: Vec<THREADSAFE_MEMORY_BASIC_INFO>,
+    pub is_filtered: bool
+}
+
+impl ProcessMemory {
+    pub unsafe fn new(tank: &Tank) -> Self {
+        Self {
+            pages: tank.page_info(),
+            is_filtered: false
+        }
+    }
+}
+
 impl THREADSAFE_MEMORY_BASIC_INFO {
     pub fn translate(info: &MEMORY_BASIC_INFORMATION) -> Self {
         Self {
@@ -47,7 +65,7 @@ impl THREADSAFE_MEMORY_BASIC_INFO {
             RegionSize: info.RegionSize,
             State: info.State,
             Protect: info.Protect,
-            Type: info.Type
+            Type: info.Type,
         }
     }
 }
@@ -146,10 +164,14 @@ impl Tank {
         };
         let cached_scan = cached_scan.unwrap();
         let rescanned = cached_scan.rescan(self);
-        rescanned.0.iter().filter(|predicate| {
-            println!("{}", predicate.value);
-            predicate.value == "Jump into a game against"
-        }).count()
+        rescanned
+            .0
+            .iter()
+            .filter(|predicate| {
+                println!("{}", predicate.value);
+                predicate.value == "Jump into a game against"
+            })
+            .count()
     }
 
     // TODO: This doesn't belong on the tank impl.
@@ -181,8 +203,9 @@ impl Tank {
                 } else {
                     false
                 }
-            }).count()
-        }
+            })
+            .count()
+    }
 
     pub fn yoink_bytes(&self, location: u64, len: usize) -> Option<Vec<u8>> {
         let mut bytes = vec![0; len];
@@ -245,16 +268,14 @@ impl Tank {
     }
 
     pub fn filter_pages(&self, pages: &mut Vec<THREADSAFE_MEMORY_BASIC_INFO>) {
-        pages
-            .retain(|page| {
-                page.Protect & PAGE_PROTECTION_MASK != PAGE_PROTECTION_FLAGS(0)
+        pages.retain(|page| {
+            page.Protect & PAGE_PROTECTION_MASK != PAGE_PROTECTION_FLAGS(0)
                 && page.State == MEM_COMMIT
                 && page.Type & PAGE_TYPE_MASK != PAGE_TYPE(0)
                 && page.BaseAddress < 0x30000000000
-                    // && VALID_REGION_SIZES.contains(&page.RegionSize)
-                    // && page.PartitionId == 0
-            }
-        );
+            // && VALID_REGION_SIZES.contains(&page.RegionSize)
+            // && page.PartitionId == 0
+        });
     }
 
     pub unsafe fn find_str(&self, input: &str, size: usize) -> Vec<ScanResult<String>> {
@@ -276,7 +297,12 @@ impl Tank {
                 if window == input_bytes {
                     let location = page.BaseAddress as u64 + offset as u64;
                     if let Some(read_str) = self.read_str(location, size) {
-                        log::info!("{:X}: {} ({})", location, read_str, read_str.as_bytes().len());
+                        log::info!(
+                            "{:X}: {} ({})",
+                            location,
+                            read_str,
+                            read_str.as_bytes().len()
+                        );
                         let scan_result = ScanResult::new(location, read_str, size);
                         ret.push(scan_result);
                     }
@@ -306,21 +332,28 @@ impl Tank {
     //      - Anald my cpu
     //  - 15
     //      - Anald my cpu
-    //  - 7 
+    //  - 7
     //      - Slight anal, not bad. 25%~ improvement in speed over 5 threads on my machine.
-    //  - 5 
+    //  - 5
     //      - Good but 4.3s avg on my machine for finding engine revision.
     // TODO(Carter):
     //  - Call this once for multiple strings.
     //  - Don't spawn new threads every call, reuse old ones (Send them instructions)
     //  - Profile it properly
     //  - Goal is to scan all relevant pages for ~8 strings in <= 1s.
-    pub fn turboscan(&self, input: &str) -> Vec<ScanResult::<String>> {
-        fn worker(sender: Sender<Vec<ScanResult::<String>>>, pages: &[THREADSAFE_MEMORY_BASIC_INFO], input: &str, size: usize, tank: &Tank) {
+    pub fn turboscan(&self, process_memory: &mut ProcessMemory, input: &str, break_at_count: usize) -> Vec<ScanResult<String>> {
+        fn worker(
+            sender: Sender<Vec<ScanResult<String>>>,
+            pages: &[THREADSAFE_MEMORY_BASIC_INFO],
+            input: &str,
+            size: usize,
+            tank: &Tank,
+            break_at_count: usize,
+        ) {
             let mut ret: Vec<ScanResult<String>> = Vec::new();
             let input_bytes: &[u8] = input.as_bytes();
 
-            for page in pages {
+            'outter: for page in pages {
                 let page_bytes = tank.yoink_bytes(page.BaseAddress as _, page.RegionSize);
                 if page_bytes.is_none() {
                     continue;
@@ -332,15 +365,17 @@ impl Tank {
                             // log::info!("[{:#?}]\t{:X}: {} ({})", thread::current().id(), location, read_str, read_str.as_bytes().len());
                             let scan_result = ScanResult::new(location, read_str, size);
                             ret.push(scan_result);
+                            if ret.len() >=  break_at_count {
+                                break 'outter;
+                            }
                         }
                     }
                 }
             }
 
-            // log::info!("[Thread {:#?}] Done", thread::current().id());
             match sender.send(ret) {
-                Ok(_) => {},
-                Err(e) => log::error!("{e}")
+                Ok(_) => {}
+                Err(e) => log::error!("{e}"),
             }
         }
 
@@ -349,47 +384,47 @@ impl Tank {
             // For cross-thread communication
             // We only need one receiver, for the main thread.
             // But we'll need to clonse the sender for as many threads as we spawn.
-            let (sender, receiver) = mpsc::channel::<Vec<ScanResult::<String>>>();
-
-            // Get pages
-            let mut pages = self.page_info();
-            // Filter pages to avoid the nono ones (see PAGE_PROTECTION_MASK and PAGE_TYPE_MASK)
-            self.filter_pages(&mut pages);
+            let (sender, receiver) = mpsc::channel::<Vec<ScanResult<String>>>();
 
             // How many pages each thread will be responsible for.
             // without handling the remainder, we have the chance of a few pages.
-            let pages_per_thread = pages.len() / 10;
+            let pages_per_thread = process_memory.pages.len() / 16;
             // println!("pages_per_thread: {}\ntotal pages: {}", pages_per_thread, pages.len());
 
-            // Get & store slices
             let mut pages_assigned = 0;
             let mut pool = Vec::<thread::JoinHandle<()>>::new();
-            let start = Instant::now();
-            
+
             // If this anals you buy a better cpu brokie ♿♿♿
-            for _ in 0..10 {
-                let page_slice = &pages[pages_assigned..pages_assigned + pages_per_thread];
-                pages_assigned += pages_per_thread; 
+            for _ in 0..16 {
+                let page_slice = &process_memory.pages[pages_assigned..pages_assigned + pages_per_thread];
+                pages_assigned += pages_per_thread;
                 let cloned_sender = sender.clone();
                 let cloned_tank = self.clone();
-                let cloned_input = input.to_string().clone(); 
+                let cloned_input = input.to_string().clone();
                 let mut cloned_slice = Vec::with_capacity(pages_per_thread);
                 cloned_slice.extend_from_slice(&page_slice);
 
                 let test = thread::spawn(move || {
-                    worker(cloned_sender, &cloned_slice, &cloned_input, cloned_input.len(), &cloned_tank);
+                    worker(
+                        cloned_sender,
+                        &cloned_slice,
+                        &cloned_input,
+                        cloned_input.len(),
+                        &cloned_tank,
+                        break_at_count,
+                    );
                 });
                 pool.push(test);
             }
 
+            let start = Instant::now();
             for thr in pool.into_iter() {
                 if let Ok(scan_result) = receiver.recv_timeout(time::Duration::from_secs(3)) {
                     all_results.extend(scan_result);
                 }
                 thr.join().unwrap();
             }
-            let duration = start.elapsed();
-            println!("Scanned {} pages for '{}' value in {:?}. Found {} results.", pages.len(), input, duration, all_results.len());
+            println!("Scanned {} pages for '{}' value in {}. Found {} results.", process_memory.pages.len(), input, start.elapsed().as_secs_f32(), all_results.len());
         }
         all_results
     }
