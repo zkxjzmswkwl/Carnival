@@ -3,6 +3,16 @@ name = "carnival-matchserver"
 version = "0.1.0"
 edition = "2021"
 
+# If you're not working on anything related to the game's memory,
+# it'd be wise to set this back to 0.
+# Otherwise, you want this at 3.
+# [profile.dev]
+# opt-level = 3
+# lto = true
+
+[profile.release]
+debug = true
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
