@@ -5,8 +5,8 @@ use std::fs::{read_to_string, write, File};
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct StateHandler {
-    client_state: ClientState,
-    game_state: GameState,
+    pub client_state: ClientState,
+    pub game_state: GameState,
 }
 
 impl StateHandler {
@@ -36,6 +36,7 @@ impl StateHandler {
         }
     }
 
+    #[allow(dead_code)]
     pub fn restore(&mut self) {
         let json =
             read_to_string("state_handler.toml").expect("state_handler.json: failed to read");
