@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::overwatch::dontlookblizzard::CachedScan;
 
-use super::dontlookblizzard::Tank;
+use super::{dontlookblizzard::{Tank, ProcessMemory}, static_actions::ActionChain};
 
 #[allow(dead_code)]
 #[allow(clippy::enum_variant_names)]
@@ -22,6 +22,23 @@ pub enum Menu {
     CustomSettingsWorkshop,
     #[default]
     Unknown,
+}
+
+impl Menu {
+    pub fn advance(&self, action_chains: &ActionChain) {
+        match self {
+            Menu::MainMenu    => {
+                action_chains.invoke_chain("custom_lobby");
+            },
+            Menu::CustomLobby => {
+                action_chains
+                    .invoke_chain("move_self_spec")
+                    .invoke_chain("set_preset")
+                    .invoke_chain("set_invite_only");
+            },
+            _ => {},
+        };
+    }
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
@@ -48,22 +65,27 @@ impl ClientState {
             return Menu::InGame;
         }
 
+
+        let mut process_memory = unsafe { ProcessMemory::new(overwatch) };
+        // Filter pages, if not already filtered, to avoid the nono ones (see PAGE_PROTECTION_MASK and PAGE_TYPE_MASK)
+        overwatch.filter_pages(&mut process_memory.pages);
+
+        if overwatch.turboscan(&mut process_memory, "Add AI", 3).len() > 2 {
+            return Menu::CustomLobby;
+        }
+
         // Current engine build #
-        if overwatch.turboscan("2.6.1.1 - 116944").len() > 8 {
+        if overwatch.turboscan(&mut process_memory, "2.7.0.0 - 117535", 9).len() > 8 {
             return Menu::MainMenu;
         }
 
-        if overwatch.turboscan("Jump into").len() > 2 {
+        if overwatch.turboscan(&mut process_memory, "Jump into", 4).len() > 4 {
             return Menu::PlayMenu;
         }
 
         // This is inconsistent. I've seen the value as low as 18 and as high as 52.
-        if overwatch.turboscan("tinder watch").len() > 48 {
+        if overwatch.turboscan(&mut process_memory, "All Games", 4).len() >= 4 {
             return Menu::CustomList;
-        }
-
-        if overwatch.turboscan("Add AI").len() > 2 {
-            return Menu::CustomLobby;
         }
 
         return Menu::Unknown;

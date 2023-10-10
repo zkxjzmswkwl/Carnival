@@ -26,13 +26,16 @@ async fn main() -> Result<()> {
 
     let mut state_handler: StateHandler = StateHandler::default();
     let mut tank: Tank = Tank::new();
+    let mut action_chains = overwatch::static_actions::ActionChain::default();
+    action_chains.load().unwrap();
+    overwatch::prelude()?;
     // TODO: Move this to its own thread.
     unsafe {
         state_handler.client_state.run_initial_scans(&mut tank);
         loop {
             let client_state = state_handler.client_state.determine(&tank);
+            client_state.advance(&action_chains);
             log::info!("{:#?}", client_state);
-            thread::sleep(time::Duration::from_millis(500));
         }
     }
     
@@ -52,8 +55,7 @@ async fn main() -> Result<()> {
     log::info!("Connection thread id {:#?}", connection_thread.thread().id());
 
 
-    let mut action_chains = overwatch::static_actions::ActionChain::default();
-    action_chains.load().unwrap();
+
 
     loop {
         // recv blocks until the webserver tells us a match is ready.
