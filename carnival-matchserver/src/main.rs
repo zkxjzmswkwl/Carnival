@@ -34,7 +34,7 @@ async fn main() -> Result<()> {
         state_handler.client_state.run_initial_scans(&mut tank);
         loop {
             let client_state = state_handler.client_state.determine(&tank);
-            client_state.advance(&action_chains);
+            client_state.advance(&action_chains, &mut state_handler.game_state);
             log::info!("{:#?}", client_state);
         }
     }
@@ -53,9 +53,6 @@ async fn main() -> Result<()> {
     });
 
     log::info!("Connection thread id {:#?}", connection_thread.thread().id());
-
-
-
 
     loop {
         // recv blocks until the webserver tells us a match is ready.
