@@ -104,7 +104,7 @@ impl ScanResult<String> {
 
 // TODO: implement this when I have patience to look at rust generics etc.
 // pub struct CachedScan<T>(Vec<ScanResult::<T>>);
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CachedScan(Vec<ScanResult<String>>);
 
 impl CachedScan {
@@ -123,7 +123,7 @@ impl CachedScan {
                 ));
             }
         });
-
+        log::info!("Rescan result len: {}", ret.len());
         CachedScan::new(ret)
     }
 }
@@ -276,6 +276,48 @@ impl Tank {
             // && VALID_REGION_SIZES.contains(&page.RegionSize)
             // && page.PartitionId == 0
         });
+    }
+
+    // TODO: remove me and refactor find_str to take more types than just &str.
+    pub unsafe fn scan_i32(&self, input: i32) -> Vec<ScanResult<i32>> {
+        // Need to convert &[u8] to u/i32. Manually I guess?
+        fn to_i32_little_endian(out: &[u8]) -> i32 {
+            ((out[0] as i32) << 24) +
+            ((out[1] as i32) << 16) +
+            ((out[2] as i32) << 8)  +
+            ((out[3] as i32) << 0)
+        }
+        let mut ret: Vec<ScanResult<i32>> = Vec::new();
+        let mut pages = self.page_info();
+        self.filter_pages(&mut pages);
+
+        log::info!("Filtered page count: {}", pages.len());
+
+        for page in pages {
+            let read_res = self.yoink_bytes(page.BaseAddress as _, page.RegionSize);
+
+            if read_res.is_none() {
+                continue;
+            }
+            for (offset, window) in read_res.unwrap().windows(4).enumerate() {
+                if to_i32_little_endian(window) == input {
+                    let location = page.BaseAddress as u64 + offset as u64;
+                    if let Some(read_val) = self.yoink_bytes(location, 4) {
+                        let read_val_slice = to_i32_little_endian(&read_val[0..4]);
+                        // log::info!(
+                        //     "{:X}: {:#?} ({})",
+                        //     location,
+                        //     read_val_slice,
+                        //     4
+                        // );
+                        let scan_result = ScanResult::new(location, read_val_slice, 4);
+                        ret.push(scan_result);
+                    }
+                }
+            }
+        }
+        ret
+       
     }
 
     pub unsafe fn find_str(&self, input: &str, size: usize) -> Vec<ScanResult<String>> {
