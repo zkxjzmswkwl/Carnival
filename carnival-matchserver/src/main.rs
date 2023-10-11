@@ -1,10 +1,9 @@
-use std::{sync::mpsc::{self, Sender}, thread, time::{self, Instant}, arch::asm};
+use std::{thread, sync::mpsc};
 
-use crate::{commons::types::ResolvedOverwatchMatch, config::Config, overwatch::dontlookblizzard::{ScanResult, THREADSAFE_MEMORY_BASIC_INFO}};
+use crate::{commons::types::ResolvedOverwatchMatch, config::Config, overwatch::map::Map};
 use color_eyre::eyre::Result;
 use overwatch::{dontlookblizzard::Tank, state_handler::StateHandler};
 use tracing_subscriber::filter::LevelFilter;
-use windows::Win32::System::Memory::{MEMORY_BASIC_INFORMATION, PAGE_PROTECTION_FLAGS, VIRTUAL_ALLOCATION_TYPE, PAGE_TYPE};
 mod commons;
 mod config;
 mod connection;
@@ -39,14 +38,10 @@ async fn main() -> Result<()> {
         }
     }
     
-    // None of this shit will ever fire until ^ todo is done.
-    let config = Config::load();
+    let _config = Config::load();
 
     // Setup ipc so the websocket connection thread can pass game objects to the main thread.
     let (tx, rx) = mpsc::channel::<String>();
-    // Need to clone the sender so we are able to pass the original to the websocket connection thread
-    // since Sender/Receivers are not threadsafe. 
-    let tx1 = tx.clone();
 
     let connection_thread = thread::spawn(move || {
         connection::connect(tx, &mut state_handler.game_state);
@@ -67,6 +62,7 @@ async fn main() -> Result<()> {
                         .invoke_chain("set_preset")
                         .invoke_chain("set_invite_only");
 
+                    let map: Map = unsafe { std::mem::transmute(resolved_match.overwatch_match.map_id) };
                     resolved_match.resolved_teams.invite();
                 }
                 Err(e) => panic!("{e}"),
