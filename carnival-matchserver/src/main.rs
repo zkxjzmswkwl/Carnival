@@ -1,10 +1,9 @@
-use std::{sync::mpsc::{self, Sender}, thread, time::{self, Instant}, arch::asm};
+use std::{thread, sync::mpsc};
 
-use crate::{commons::types::ResolvedOverwatchMatch, config::Config, overwatch::dontlookblizzard::{ScanResult, THREADSAFE_MEMORY_BASIC_INFO}};
+use crate::{commons::types::ResolvedOverwatchMatch, config::Config};
 use color_eyre::eyre::Result;
-use overwatch::{dontlookblizzard::{Tank, CachedScan}, state_handler::StateHandler, map::Map};
+use overwatch::{dontlookblizzard::Tank, state_handler::StateHandler};
 use tracing_subscriber::filter::LevelFilter;
-use windows::Win32::System::Memory::{MEMORY_BASIC_INFORMATION, PAGE_PROTECTION_FLAGS, VIRTUAL_ALLOCATION_TYPE, PAGE_TYPE};
 mod commons;
 mod config;
 mod connection;

@@ -19,11 +19,13 @@ pub fn type_str(input: &str, delay: u64) {
     thread::sleep(time::Duration::from_millis(delay * 5));
 }
 
+#[allow(dead_code)]
 pub fn keypress(key: Vk, delay: u64) {
     winput::send(key);
     thread::sleep(time::Duration::from_millis(delay));
 }
 
+#[allow(dead_code)]
 pub fn keypress_for_duration(key: Vk, held_for: u64) {
     winput::press(key);
     thread::sleep(time::Duration::from_millis(held_for));
