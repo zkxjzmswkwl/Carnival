@@ -7,15 +7,18 @@ use crate::input;
 
 #[derive(Debug)]
 pub struct MapData {
-    idx: u32,
+    idx: i32,
     varied_skybox: bool
 }
 
+#[repr(i32)]
 pub enum Map {
+    None,
     Antarctic,
     Busan,
     Ilios,
     Lijiang,
+    None1,
     Nepal,
     Oasis,
     Samoa, 
@@ -30,9 +33,13 @@ pub enum Map {
     JunkCity,
     Suravasa,
     BlizzardWorld,
+    None2,
     Eichenwalde,
+    None3,
     Hollywood,
+    None4,
     KingsRow,
+    None5,
     Midtown,
     Numbani,
     Paraiso,
@@ -44,10 +51,12 @@ pub enum Map {
 impl Map {
     pub fn data(&self) -> MapData {
         match self {
+            Map::None => MapData { idx: 0, varied_skybox: false },
             Map::Antarctic => MapData {idx: 1, varied_skybox: false },
             Map::Busan => MapData {idx: 2, varied_skybox: true },
             Map::Ilios => MapData {idx: 3, varied_skybox: true },
             Map::Lijiang => MapData {idx: 4, varied_skybox: true },
+            Map::None1 => MapData { idx: 0, varied_skybox: false },
             Map::Nepal => MapData {idx: 6, varied_skybox: true },
             Map::Oasis => MapData {idx: 7, varied_skybox: true },
             Map::Samoa => MapData {idx: 8, varied_skybox: false },
@@ -62,9 +71,13 @@ impl Map {
             Map::JunkCity => MapData {idx: 17, varied_skybox: false },
             Map::Suravasa  => MapData {idx: 18, varied_skybox: false },
             Map::BlizzardWorld => MapData {idx: 19, varied_skybox: true },
+            Map::None2 => MapData { idx: 0, varied_skybox: false },
             Map::Eichenwalde => MapData {idx: 21, varied_skybox: true },
+            Map::None3 => MapData { idx: 0, varied_skybox: false },
             Map::Hollywood => MapData {idx: 23, varied_skybox: true },
+            Map::None4 => MapData { idx: 0, varied_skybox: false },
             Map::KingsRow => MapData {idx: 25, varied_skybox: true },
+            Map::None5 => MapData { idx: 0, varied_skybox: false },
             Map::Midtown => MapData {idx: 27, varied_skybox: true },
             Map::Numbani => MapData {idx: 28, varied_skybox: false },
             Map::Paraiso => MapData {idx: 29, varied_skybox: true },
@@ -74,14 +87,14 @@ impl Map {
         }
     }
     pub fn select(self) {
-        for _ in 1..self.data().idx as usize {
-            input::keypress(Vk::DownArrow, 30);
+        for _ in 1..self.data().idx {
+            input::keypress(Vk::DownArrow, 90);
         }
         thread::sleep(time::Duration::from_millis(200));
         if self.data().varied_skybox {
             input::keypress_for_duration(Vk::Space, 300);
             input::keypress(Vk::DownArrow, 100);
         }
-        input::keypress(Vk::RightArrow, 30);
+        input::keypress_for_duration(Vk::RightArrow, 120);
     }
 }

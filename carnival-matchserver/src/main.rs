@@ -1,6 +1,6 @@
 use std::{thread, sync::mpsc};
 
-use crate::{commons::types::ResolvedOverwatchMatch, config::Config};
+use crate::{commons::types::ResolvedOverwatchMatch, config::Config, overwatch::map::Map};
 use color_eyre::eyre::Result;
 use overwatch::{dontlookblizzard::Tank, state_handler::StateHandler};
 use tracing_subscriber::filter::LevelFilter;
@@ -62,6 +62,7 @@ async fn main() -> Result<()> {
                         .invoke_chain("set_preset")
                         .invoke_chain("set_invite_only");
 
+                    let map: Map = unsafe { std::mem::transmute(resolved_match.overwatch_match.map_id) };
                     resolved_match.resolved_teams.invite();
                 }
                 Err(e) => panic!("{e}"),
