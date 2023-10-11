@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct GameState {
     pub has_game: bool,
-    pub game_configured: bool,
+    pub configured: bool,
     blue_team: Vec<String>,
     red_team: Vec<String>,
 }
