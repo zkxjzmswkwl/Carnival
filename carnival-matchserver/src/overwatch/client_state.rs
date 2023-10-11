@@ -1,8 +1,11 @@
+use core::time;
+use std::thread;
+
 use serde::{Deserialize, Serialize};
 
 use crate::overwatch::dontlookblizzard::CachedScan;
 
-use super::{dontlookblizzard::{Tank, ProcessMemory}, static_actions::ActionChain};
+use super::{dontlookblizzard::{Tank, ProcessMemory}, static_actions::ActionChain, game_state::GameState};
 
 #[allow(dead_code)]
 #[allow(clippy::enum_variant_names)]
@@ -25,16 +28,20 @@ pub enum Menu {
 }
 
 impl Menu {
-    pub fn advance(&self, action_chains: &ActionChain) {
+    pub fn advance(&self, action_chains: &ActionChain, game_state: &mut GameState) {
         match self {
             Menu::MainMenu    => {
                 action_chains.invoke_chain("custom_lobby");
             },
             Menu::CustomLobby => {
-                action_chains
-                    .invoke_chain("move_self_spec")
-                    .invoke_chain("set_preset")
-                    .invoke_chain("set_invite_only");
+                if !game_state.configured  {
+                    action_chains
+                        .invoke_chain("move_self_spec")
+                        .invoke_chain("set_preset")
+                        .invoke_chain("set_invite_only");
+                    // Don't love this.
+                    game_state.configured = true;
+                }
             },
             _ => {},
         };
@@ -62,9 +69,9 @@ impl ClientState {
     pub fn determine(&mut self, overwatch: &Tank) -> Menu {
         // Check if in game
         if overwatch.filter_fps_gt_60() > 4 {
+            thread::sleep(time::Duration::from_secs(1));
             return Menu::InGame;
         }
-
 
         let mut process_memory = unsafe { ProcessMemory::new(overwatch) };
         // Filter pages, if not already filtered, to avoid the nono ones (see PAGE_PROTECTION_MASK and PAGE_TYPE_MASK)
