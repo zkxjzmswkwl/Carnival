@@ -1,3 +1,6 @@
+# NOTICE
+The current method in which client state is inferred will result in your account being suspended. I'll change it when I care.
+
 # Read
 I do not know Rust.
 
