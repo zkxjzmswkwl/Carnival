@@ -15,7 +15,8 @@ mod overwatch;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    change_status().await;
+    let mut lcu = shaco::rest::RESTClient::new().unwrap();
+    change_status(&mut lcu).await;
     Ok(())
     // let mut log_level = LevelFilter::INFO;
     // if cfg!(debug_assertions) {
