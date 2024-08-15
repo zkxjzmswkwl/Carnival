@@ -43,8 +43,8 @@ pub async fn get_pending_match(pool: &SqlitePool) -> Option<ResolvedOverwatchMat
 #[allow(dead_code)]
 pub async fn create_match(
     map_id: i32,
-    blue_team: &Vec<i32>,
-    red_team: &Vec<i32>,
+    blue_team: &[i32],
+    red_team: &[i32],
     pool: &SqlitePool,
 ) -> Result<i32, sqlx::Error> {
     // Because we should **never** be inserting rows into the
@@ -196,7 +196,7 @@ impl ResolvedOverwatchMatch {
             .await
             .unwrap_or_else(|err| {
                 eprintln!("{err}");
-                return OverwatchMatch::default();
+                OverwatchMatch::default()
             });
         let resolved_teams = ResolvedTeams::for_match(ow_match_id, pool).await;
         Self {

@@ -1,10 +1,7 @@
 #[macro_use]
 extern crate dotenv_codegen;
 
-use crate::db::queries::tables;
-use api::endpoints::{
-    forgot_password, join_queue, leave_queue, login, register, reset_password, save_settings,
-};
+use api::endpoints::{join_queue, leave_queue, login, register, save_settings, forgot_password, reset_password};
 use axum::{
     extract::ws::{Message, WebSocket, WebSocketUpgrade},
     extract::State,
@@ -39,74 +36,6 @@ const HMAC_KEY: &[u8] = dotenv!("HMAC_KEY").as_bytes();
 const DATABASE_URL: &str = dotenv!("DATABASE_URL");
 const DOMAIN: &str = dotenv!("DOMAIN");
 
-async fn create_tables(pool: &SqlitePool) {
-    let create_user_table_result = sqlx::query(tables::CREATE_USERS)
-        .execute(pool)
-        .await
-        .unwrap();
-    println!("User table creation -> {:?}", create_user_table_result);
-
-    let create_session_result = sqlx::query(tables::CREATE_SESSION_TOKENS)
-        .execute(pool)
-        .await
-        .unwrap();
-    println!(
-        "Session Token table creation -> {:?}",
-        create_session_result
-    );
-
-    let create_ow_map_result = sqlx::query(&tables::CREATE_OW_MAP)
-        .execute(pool)
-        .await
-        .unwrap();
-    println!(
-        "Overwatch Maps table creation -> {:?}",
-        create_ow_map_result
-    );
-
-    let create_ow_match_player_result = sqlx::query(&tables::CREATE_OW_MATCH_THRU)
-        .execute(pool)
-        .await
-        .unwrap();
-    println!(
-        "Overwatch Match thru table creation -> {:?}",
-        create_ow_match_player_result
-    );
-
-    let create_ow_match_result = sqlx::query(&tables::CREATE_OW_MATCH)
-        .execute(pool)
-        .await
-        .unwrap();
-    println!(
-        "Overwatch Match table creation -> {:?}",
-        create_ow_match_result
-    );
-
-    let create_queue_result = sqlx::query(&tables::CREATE_QUEUE)
-        .execute(pool)
-        .await
-        .unwrap();
-    println!("Queue table creation -> {:?}", create_queue_result);
-
-    let create_queued_players_result = sqlx::query(&tables::CREATE_QUEUED_PLAYERS)
-        .execute(pool)
-        .await
-        .unwrap();
-    println!(
-        "Queued Players table creation -> {:?}",
-        create_queued_players_result
-    );
-
-    let create_password_reset_token_result = sqlx::query(&tables::CREATE_QUEUED_PLAYERS)
-        .execute(pool)
-        .await
-        .unwrap();
-    println!(
-        "Password Reset Token table creation -> {:?}",
-        create_password_reset_token_result
-    );
-}
-
 #[derive(Clone)]
 pub struct CarnyState {
     pool: SqlitePool,
@@ -120,8 +49,7 @@ impl CarnyState {
         }
 
         let pool = SqlitePool::connect(DATABASE_URL).await.unwrap();
-        create_tables(&pool).await;
-
+        sqlx::migrate!("../migrations").run(&pool).await.unwrap();
         Self { pool }
     }
 }

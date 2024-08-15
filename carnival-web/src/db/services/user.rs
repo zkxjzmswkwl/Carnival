@@ -22,6 +22,7 @@ pub async fn user_by_username(username: &str, pool: &SqlitePool) -> Result<User,
     }
 }
 
+#[allow(dead_code)]
 pub async fn by_id(id: i32, pool: &SqlitePool) -> Option<User> {
     let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
         .bind(id)
@@ -34,6 +35,7 @@ pub async fn by_id(id: i32, pool: &SqlitePool) -> Option<User> {
     None
 }
 
+#[allow(dead_code)]
 pub async fn user_id_by_username(username: &str, pool: &SqlitePool) -> Option<i32> {
     // Should just be id, but not sure what size of integer it'd be, since SQLite `INTEGER` is
     // dynamic, apparently.

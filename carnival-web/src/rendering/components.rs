@@ -183,7 +183,7 @@ pub async fn base(pool: &SqlitePool, cookies: &Cookie) -> String {
 
 pub async fn build_queue_comp(cookies: &Cookie, pool: &SqlitePool) -> String {
     // Only care about one queue for now
-    let resolved_user = user::from_cookies(&cookies, pool).await;
+    let resolved_user = user::from_cookies(cookies, pool).await;
     if resolved_user.is_none() {
         return "<div class=\"text-xl text-center\">Couldn't be authenticated</div>".to_string();
     }
