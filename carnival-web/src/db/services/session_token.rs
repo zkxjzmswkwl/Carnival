@@ -6,7 +6,6 @@ use rand::distributions::Alphanumeric;
 use rand::Rng;
 use sqlx::{sqlite::SqliteQueryResult, SqlitePool};
 
-
 fn rand_str() -> String {
     rand::thread_rng()
         .sample_iter(&Alphanumeric)
@@ -57,7 +56,10 @@ pub async fn token_by_user_id(user_id: i32, pool: &SqlitePool) -> Option<Session
 
     match token_result {
         Ok(token) => Some(token),
-        Err(e) => { eprintln!("{e}"); None }
+        Err(e) => {
+            eprintln!("{e}");
+            None
+        }
     }
 
     // if token_result.is_ok() {
@@ -92,19 +94,12 @@ pub async fn set_invalid(
     .await
 }
 
-pub async fn validate(
-    ip: &str, 
-    user_id: i32,
-    pool: &SqlitePool,
-) -> Option<SessionToken> {
-
+pub async fn validate(ip: &str, user_id: i32, pool: &SqlitePool) -> Option<SessionToken> {
     if let Some(token) = token_by_user_id(user_id, pool).await {
         // Get remote addr without port
-        if let Ok(remotes_match) = verify_password(
-            &ip,
-            &token.token,
-            token.unique_hmac_key.as_bytes(),
-        ) {
+        if let Ok(remotes_match) =
+            verify_password(ip, &token.token, token.unique_hmac_key.as_bytes())
+        {
             if !remotes_match {
                 // Someone's trying to use a session token bound to a different ip than their current.
                 // Invalidate the session token, forcing the user to reauth with their password.
@@ -123,10 +118,11 @@ pub async fn validate(
 
 pub fn token_from_cookies(cookies: &Cookie) -> Option<SessionToken> {
     let session_option = cookies.get("session_id");
-    if session_option.is_none() {
-        return None;
+    match session_option {
+        Some(session_str) => {
+            // let token = &session_str["Bearer ".len()..].to_string();
+            serde_json::from_str(session_str).ok()
+        }
+        None => None,
     }
-    let session = serde_json::from_str(session_option.unwrap()).unwrap();
-    // let token = &session_option.unwrap()["Bearer ".len()..].to_string();
-    Some(session)
 }

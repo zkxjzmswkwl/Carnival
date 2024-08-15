@@ -43,33 +43,38 @@ async fn main() -> Result<()> {
     //         log::info!("{:#?}", client_state);
     //     }
     // }
+    let mut _state_handler: StateHandler = StateHandler::default();
+    // state_handler.restore();
+    // println!("{state_handler:#?}");
 
     // let _config = Config::load();
+    let (tx, rx) = mpsc::channel::<String>();
+    // Need to clone the sender so we are able to pass the original to the websocket connection thread
+    // since Sender/Receivers are not threadsafe. 
+    let tx1 = tx.clone();
 
-    // // Setup ipc so the websocket connection thread can pass game objects to the main thread.
-    // let (tx, rx) = mpsc::channel::<String>();
-
-    // let connection_thread = thread::spawn(move || {
-    //     connection::connect(tx, &mut state_handler.game_state);
-    // });
+    thread::spawn(move || {
+        log::info!("{:#?}", thread::current().id());
+        connection::connect(tx);
+    });
 
     // log::info!(
     //     "Connection thread id {:#?}",
     //     connection_thread.thread().id()
     // );
 
-    // loop {
-    //     // recv blocks until the webserver tells us a match is ready.
-    //     if let Ok(recv) = rx.recv() {
-    //         match serde_json::from_str::<ResolvedOverwatchMatch>(&recv) {
-    //             Ok(resolved_match) => {
-    //                 overwatch::prelude()?;
-    //                 println!("{:#?}", resolved_match);
-    //                 action_chains
-    //                     .invoke_chain("custom_lobby")
-    //                     .invoke_chain("move_self_spec")
-    //                     .invoke_chain("set_preset")
-    //                     .invoke_chain("set_invite_only");
+    loop {
+        // recv blocks until the webserver tells us a match is ready.
+        if let Ok(recv) = rx.recv() {
+            match serde_json::from_str::<ResolvedOverwatchMatch>(&recv) {
+                Ok(resolved_match) => {
+                    overwatch::prelude()?;
+                    println!("{:#?}", resolved_match);
+                    action_chains
+                        .invoke_chain("custom_lobby")
+                        .invoke_chain("move_self_spec")
+                        .invoke_chain("set_preset")
+                        .invoke_chain("set_invite_only");
 
     //                 let map: Map =
     //                     unsafe { std::mem::transmute(resolved_match.overwatch_match.map_id) };

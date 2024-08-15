@@ -12,6 +12,7 @@ pub async fn add_user(
         .await
 }
 
+#[allow(dead_code)]
 pub async fn add_bracket(
     queue_id: i32,
     pool: &SqlitePool,
@@ -21,24 +22,19 @@ pub async fn add_bracket(
         .await
 }
 
+#[allow(dead_code)]
 pub async fn has_key(bracket_id: i32, pool: &SqlitePool) -> bool {
-    match sqlx::query_file_as_unchecked!(BracketKey, "sql/bracket_has_key.sql", bracket_id)
+    sqlx::query_file_as_unchecked!(BracketKey, "sql/bracket_has_key.sql", bracket_id)
         .fetch_one(pool)
         .await
-    {
-        Ok(_) => true,
-        Err(_) => false,
-    }
+        .is_ok()
 }
 
 pub async fn does_key_exist(bracket_key: &str, pool: &SqlitePool) -> bool {
-    match sqlx::query_file!("sql/does_bracket_key_exist.sql", bracket_key)
+    sqlx::query_file!("sql/does_bracket_key_exist.sql", bracket_key)
         .fetch_one(pool)
         .await
-    {
-        Ok(_) => true,
-        Err(_) => false,
-    }
+        .is_ok()
 }
 
 // This is way too similar to `does_key_exist` - Should just run a length check in `endpoints::register`.

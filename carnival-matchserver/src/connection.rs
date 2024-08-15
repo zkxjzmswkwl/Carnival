@@ -5,9 +5,8 @@ use url::Url;
 
 use crate::overwatch::game_state::GameState;
 
-
-pub fn connect(ipc: mpsc::Sender<String>, game_state: &mut GameState) {
-    let (mut socket, _resp) = tungstenite::connect(Url::parse("ws://127.0.0.1:3000/ws/notifications").unwrap())
+pub fn connect(ipc: mpsc::Sender<String>) {
+    let (mut socket, _resp) = tungstenite::connect(Url::parse("wss://carnival.ryswick.net/ws/notifications").unwrap())
         .expect("No connection made.");
 
     // Authenticate with proper matchserver token (generated)
