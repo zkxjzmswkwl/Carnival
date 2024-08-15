@@ -47,12 +47,12 @@ ___
 
 <i>2. What you can do</i>
 <br>
-* If  **bastard** is not **"conwoman"** nor **"conman"**, and is not affiliated in any way with **"conwoman"** nor **"yung getrichqwick"**, you are free to do quite literally whatever the fuck you want, so long as any profits do not exceed that of <i>$1,000 USD monthly</i>. Just credit ya boy.
+* If  **bastard** is not **"conwoman"** nor **"conman"**, and is not affiliated in any way with **"conwoman"** nor **"conman"**, you are free to do quite literally whatever the fuck you want, so long as any profits do not exceed that of <i>$1,000 USD monthly</i>. Just credit ya boy.
 ___
 
 <i>3. What you can't do</i>
 <br>
-* If **bastard** is either **"conwoman"** or **"conman"**, or is affiliated with either **"conwoman"** or **"yung getrichqwick"**, **bastard** can do nothing with this project. If it is found that **bastard** is utilizing this project in **__any way__**, legal action will be swift. Not unlike the Bald eagle, The U. S. OF A's bird.
+* If **bastard** is either **"conwoman"** or **"conman"**, or is affiliated with either **"conwoman"** or **"conman"**, **bastard** can do nothing with this project. If it is found that **bastard** is utilizing this project in **__any way__**, legal action will be swift. Not unlike the Bald eagle, The U. S. OF A's bird.
 ___
 
 <div align="center">

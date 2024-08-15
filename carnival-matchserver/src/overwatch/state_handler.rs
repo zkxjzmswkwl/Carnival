@@ -5,8 +5,8 @@ use std::fs::{read_to_string, write, File};
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct StateHandler {
-    client_state: ClientState,
-    game_state: GameState,
+    pub client_state: ClientState,
+    pub game_state: GameState,
 }
 
 impl StateHandler {

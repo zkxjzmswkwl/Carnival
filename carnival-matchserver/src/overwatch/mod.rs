@@ -18,8 +18,10 @@ pub mod client_state;
 pub mod game_state;
 pub mod state_handler;
 pub mod dyn_actions;
+pub mod dontlookblizzard;
+pub mod map;
 
-fn get_hwnd() -> Result<HWND, windows::core::Error> {
+pub fn get_hwnd() -> Result<HWND, windows::core::Error> {
     let process_name: PCSTR = windows::core::s!("Overwatch");
     let hwnd = unsafe { FindWindowA(None, process_name) };
     log::debug!("{:?}", hwnd);
