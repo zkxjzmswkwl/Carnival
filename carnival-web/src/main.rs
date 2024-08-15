@@ -10,14 +10,18 @@ use axum::{
     routing::{get, post},
     Router, Server,
 };
-use db::services::overwatch_match::{ResolvedOverwatchMatch, self};
+use db::services::overwatch_match::{self, ResolvedOverwatchMatch};
 use futures::{stream::StreamExt, SinkExt};
 use http::{HeaderName, Method};
-use rendering::{components::{
-    hero, leaderboard_comp, login_form, profile_comp, queue_table, queue_user_panel, register_form, settings_user,
-}, routes::settings_route};
 use rendering::routes::{
     index, leaderboard_route, login_route, profile_route, queue_route, register_route,
+};
+use rendering::{
+    components::{
+        hero, leaderboard_comp, login_form, profile_comp, queue_table, queue_user_panel,
+        register_form, settings_user,
+    },
+    routes::settings_route,
 };
 use sqlx::{migrate::MigrateDatabase, Sqlite, SqlitePool};
 use std::{env, net::SocketAddr};
@@ -77,16 +81,18 @@ async fn websocket(stream: WebSocket, state: CarnyState) {
             // The matchserver is asking if there's a pending match (status = 0)
             if recv == "match?" {
                 // Check if there is
-                if let Some(resolved_match) = overwatch_match::get_pending_match(&state.pool).await {
+                if let Some(resolved_match) = overwatch_match::get_pending_match(&state.pool).await
+                {
                     // Store the match data temporarily
                     current_match = resolved_match.clone();
                     // If there is, tell the matchserver to expect to receive the match now
                     if let Ok(_) = sender.send(Message::Text(String::from("match"))).await {
                         // Send the match
-                        sender.send(
-                            Message::Text(serde_json::to_string(&resolved_match).unwrap()
-                        )).await;
-
+                        sender
+                            .send(Message::Text(
+                                serde_json::to_string(&resolved_match).unwrap(),
+                            ))
+                            .await;
                     }
                 }
             }
@@ -99,20 +105,56 @@ async fn websocket(stream: WebSocket, state: CarnyState) {
                 "match ack" => {
                     // Need to update that match's row to show that it no longer needs to be sent to a matchserver
                     // We stored it in `current_match`.                                 1 = matchserver has the match.
-                    overwatch_match::set_match_status(current_match.overwatch_match.id, 1, &state.pool).await;
-                },
+                    match overwatch_match::set_match_status(
+                        current_match.overwatch_match.id,
+                        1,
+                        &state.pool,
+                    )
+                    .await
+                    {
+                        Ok(_) => {}
+                        Err(e) => eprintln!("{e}"),
+                    }
+                }
                 "match lobby" => {
-                    sender.send(Message::Text(String::from("ack"))).await;
-                    overwatch_match::set_match_status(current_match.overwatch_match.id, 2, &state.pool).await;
-                },
+                    // sender.send(Message::Text(String::from("ack"))).await;
+                    match overwatch_match::set_match_status(
+                        current_match.overwatch_match.id,
+                        2,
+                        &state.pool,
+                    )
+                    .await
+                    {
+                        Ok(_) => {}
+                        Err(e) => eprintln!("{e}"),
+                    }
+                }
                 "match ingame" => {
-                    sender.send(Message::Text(String::from("ack"))).await;
-                    overwatch_match::set_match_status(current_match.overwatch_match.id, 3, &state.pool).await;
-                },
+                    // sender.send(Message::Text(String::from("ack"))).await;
+                    match overwatch_match::set_match_status(
+                        current_match.overwatch_match.id,
+                        3,
+                        &state.pool,
+                    )
+                    .await
+                    {
+                        Ok(_) => {}
+                        Err(e) => eprintln!("{e}"),
+                    }
+                }
                 // TODO: The matchserver needs to tell us who the winner is.
                 "match completed" => {
-                    sender.send(Message::Text(String::from("ack"))).await;
-                    overwatch_match::set_match_status(current_match.overwatch_match.id, 4, &state.pool).await;
+                    // sender.send(Message::Text(String::from("ack"))).await;
+                    match overwatch_match::set_match_status(
+                        current_match.overwatch_match.id,
+                        4,
+                        &state.pool,
+                    )
+                    .await
+                    {
+                        Ok(_) => {}
+                        Err(e) => eprintln!("{e}"),
+                    }
                 }
                 _ => {}
             }
@@ -158,7 +200,10 @@ async fn main() {
         .route("/components/leaderboard", get(leaderboard_comp))
         .route("/components/queue_table", get(queue_table))
         .route("/components/profile/:username", get(profile_comp))
-        .route("/components/settings/:settings_subroute", get(settings_user))
+        .route(
+            "/components/settings/:settings_subroute",
+            get(settings_user),
+        )
         .route(
             "/components/queue_user_table/:username",
             get(queue_user_panel),

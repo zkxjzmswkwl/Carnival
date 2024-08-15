@@ -17,7 +17,7 @@
     "set_preset" : [
       {"MouseAction":  { "x": 1552, "y": 237, "is_dynamic": false, "delay": 50}},
       {"MouseAction":  { "x": 281, "y": 365, "is_dynamic": false, "delay": 1800}},
-      {"MouseAction":  { "x": 261, "y": 346, "is_dynamic": false, "delay": 700}},
+      {"MouseAction":  { "x": 1088, "y": 297, "is_dynamic": false, "delay": 700}},
       {"MouseAction":  { "x": 1042, "y": 604, "is_dynamic": false, "delay": 100}},
       {"MouseAction":  { "x": 1797, "y": 1006, "is_dynamic": false, "delay": 100}},
       {"MouseAction":  { "x": 1797, "y": 1006, "is_dynamic": false, "delay": 200}}
