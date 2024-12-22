@@ -369,13 +369,13 @@ impl Tank {
 
     // Thread count observations:
     //  - 50
-    //      - Anald my cpu
+    //      - Very high cpu
     //  - 30
-    //      - Anald my cpu
+    //      - Very high cpu
     //  - 15
-    //      - Anald my cpu
+    //      - High cpu
     //  - 7
-    //      - Slight anal, not bad. 25%~ improvement in speed over 5 threads on my machine.
+    //      - Considerable-ish cpu, not bad. 25%~ improvement in speed over 5 threads on my machine.
     //  - 5
     //      - Good but 4.3s avg on my machine for finding engine revision.
     // TODO(Carter):
@@ -436,7 +436,6 @@ impl Tank {
             let mut pages_assigned = 0;
             let mut pool = Vec::<thread::JoinHandle<()>>::new();
 
-            // If this anals you buy a better cpu brokie ♿♿♿
             for _ in 0..16 {
                 let page_slice = &process_memory.pages[pages_assigned..pages_assigned + pages_per_thread];
                 pages_assigned += pages_per_thread;
