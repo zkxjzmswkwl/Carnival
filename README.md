@@ -1,6 +1,9 @@
 # NOTICE
 The current method in which client state is inferred will result in your account being suspended. I'll change it when I care.
 
+Q: why did you stop working on this?
+A: Rust sucks and Overwatch is very bad now.
+
 # Read
 
 I do not know Rust.
